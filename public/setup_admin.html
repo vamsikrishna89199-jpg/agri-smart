@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js?v=2"></script>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #fff;
+            font-family: system-ui;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #4ade80;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Admin Setup Tool</h1>
+    <p>User: <strong>admin</strong> (admin@kisan.ai)<br>Password: <strong>@Vamsi184</strong></p>
+    <button onclick="createAdmin()">Create Admin Account</button>
+    <div id="status"></div>
+
+    <script>
+        async function createAdmin() {
+            const status = document.getElementById('status');
+            status.innerText = "Creating account...";
+
+            const email = "admin@kisan.ai";
+            const password = "@Vamsi184";
+            const username = "admin";
+
+            try {
+                // 1. Create Auth User
+                const { user } = await firebase.auth().createUserWithEmailAndPassword(email, password);
+
+                // 2. Create Firestore Entry with Admin Role
+                await firebase.firestore().collection('users').doc(user.uid).set({
+                    username: username,
+                    email: email,
+                    role: 'admin',
+                    created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                    is_active: true,
+                    is_verified: true,
+                    profile_pic: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
+                });
+
+                // 3. Create Admin Profile
+                await firebase.firestore().collection('profiles').doc(user.uid).set({
+                    user_id: user.uid,
+                    full_name: "Super Admin",
+                    role: "admin"
+                });
+
+                status.style.color = "#4ade80";
+                status.innerText = "SUCCESS! Admin created. Redirecting to login...";
+
+                setTimeout(() => window.location.href = 'login.html', 2000);
+
+            } catch (error) {
+                console.error(error);
+                status.style.color = "#ef4444";
+                if (error.code === 'auth/email-already-in-use') {
+                    status.innerText = "Error: This admin account already exists. Trying to promote existing user...";
+                    promoteExisting(email);
+                } else {
+                    status.innerText = "Error: " + error.message;
+                }
+            }
+        }
+
+        async function promoteExisting(email) {
+            try {
+                // Note: We can't easily look up UID by email client-side without logging in.
+                // But we can ask user to login first if needed.
+                // Assuming we can't do it easily if 'users' collection isn't readable by public.
+                document.getElementById('status').innerText += "\n\nUser exists. Please Log in with these credentials, then run the console command provided earlier if permissions are missing.";
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+
+</html>

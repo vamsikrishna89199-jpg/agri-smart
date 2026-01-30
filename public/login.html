@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KISAN AI - Login</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="js/firebase-config.js?v=2"></script>
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-dark: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-light: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(74, 222, 128, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #0f172a;
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.3);
+        }
+
+        .logo-text {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 20px rgba(74, 222, 128, 0.2);
+        }
+
+        .tagline {
+            font-size: 14px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 18px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #86efac;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .demo-credentials {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border-left: 3px solid var(--warning);
+        }
+
+        .demo-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--warning);
+            margin-bottom: 5px;
+        }
+
+        .demo-info {
+            font-size: 13px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 480px) {
+            .glass-card {
+                padding: 30px 20px;
+            }
+
+            .logo {
+                gap: 10px;
+            }
+
+            .logo-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="ph ph-plant"></i>
+                </div>
+                <div class="logo-text">KISAN AI</div>
+            </div>
+            <div class="tagline">Smart Farming Intelligence Platform</div>
+        </div>
+
+        <div class="glass-card">
+            <div id="alert" class="alert"></div>
+
+            <div class="form-title">Welcome Back</div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Username or Email</label>
+                    <div class="input-group">
+                        <i class="ph ph-user input-icon"></i>
+                        <input type="text" class="form-input" id="username" placeholder="Enter username or email"
+                            required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <i class="ph ph-lock input-icon"></i>
+                        <input type="password" class="form-input" id="password" placeholder="Enter password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <i class="ph ph-sign-in"></i>
+                    <span>Sign In</span>
+                    <div class="loading" style="display: none;"></div>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <span>Don't have an account? </span>
+                <a href="/register" class="footer-link">Create Account</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; font-size: 12px; opacity: 0.6;">
+            &copy; 2024 KISAN AI - Unified Rural Intelligence Platform
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        // Check if already logged in
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (token && user) {
+            window.location.href = '/';
+        }
+
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim(); // Treated as email for now, or need lookup
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const loading = loginBtn.querySelector('.loading');
+            const btnText = loginBtn.querySelector('span');
+
+            // Show loading
+            btnText.textContent = 'Signing In...';
+            loading.style.display = 'block';
+            loginBtn.disabled = true;
+
+            // Clear previous alerts
+            showAlert('', '');
+
+            try {
+                // Determine if input is email or username
+                let email = username;
+                if (!username.includes('@')) {
+                    // Lookup email by username from Firestore (requires index)
+                    // For MVP migration, we might ask user to use email, or do a query
+                    // Assuming direct email for now or doing a query
+                    const snapshot = await db.collection('users').where('username', '==', username).get();
+                    if (snapshot.empty) {
+                        throw new Error("Username not found");
+                    }
+                    email = snapshot.docs[0].data().email;
+                }
+
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Get User Data from Firestore
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (!userDoc.exists) throw new Error("User data not found");
+
+                const userData = userDoc.data();
+                userData.id = user.uid; // Mapping ID
+
+                // Save token and user info (Legacy LocalStorage compatibility)
+                const token = await user.getIdToken();
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(userData));
+
+                showAlert('Login successful! Redirecting...', 'success');
+
+                // Redirect based on role
+                setTimeout(() => {
+                    if (userData.role === 'admin') {
+                        window.location.href = '/#admin';
+                    } else {
+                        window.location.href = '/';
+                    }
+                }, 1500);
+
+            } catch (error) {
+                console.error(error);
+                let msg = error.message;
+                if (error.code === 'auth/user-not-found' || error.message.includes('not found')) msg = "User not found";
+                if (error.code === 'auth/wrong-password') msg = "Invalid password";
+
+                showAlert(msg, 'error');
+                loginBtn.disabled = false;
+                btnText.textContent = 'Sign In';
+                loading.style.display = 'none';
+            }
+        });
+
+        // Alert function
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert';
+
+            if (type === 'error') {
+                alertDiv.classList.add('alert-error');
+                alertDiv.innerHTML = `<i class="ph ph-warning-circle"></i> ${message}`;
+            } else if (type === 'success') {
+                alertDiv.classList.add('alert-success');
+                alertDiv.innerHTML = `<i class="ph ph-check-circle"></i> ${message}`;
+            }
+
+            alertDiv.style.display = message ? 'flex' : 'none';
+        }
+
+        // Demo login for quick testing
+        window.demoLogin = function (username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        };
+    </script>
+</body>
+
+</html>

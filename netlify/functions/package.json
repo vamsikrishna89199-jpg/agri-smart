@@ -1,0 +1,10 @@
+{
+  "name": "agrismart-functions",
+  "version": "1.0.0",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "groq-sdk": "^0.3.3",
+    "node-fetch": "^2.6.11",
+    "busboy": "^1.6.0"
+  }
+}
