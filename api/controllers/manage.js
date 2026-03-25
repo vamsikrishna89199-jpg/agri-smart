@@ -1,4 +1,4 @@
-const { queryDB, runDB } = require('../database');
+const { queryDB, runDB } = require('./database');
 
 async function handleGetUsers(req, res) {
     try {

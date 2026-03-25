@@ -4,11 +4,11 @@ const busboy = require('busboy');
 require('dotenv').config();
 const { initDB } = require('./database');
 
+const manage = require('./controllers/manage');
 const ai = require('./controllers/ai');
-const common = require('./controllers/common');
 const weather = require('./controllers/weather');
 const market = require('./controllers/market');
-const manage = require('./controllers/manage');
+const common = require('./controllers/common');
 
 const app = express();
 app.use(cors());

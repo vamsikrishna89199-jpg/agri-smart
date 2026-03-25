@@ -1,6 +1,6 @@
 const Groq = require('groq-sdk');
 const googleTTS = require('google-tts-api');
-const { queryDB, runDB } = require('../database');
+const { queryDB, runDB } = require('./database');
 const fetch = require('node-fetch');
 
 let groqInstance = null;
