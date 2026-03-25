@@ -111,7 +111,7 @@
 
         async function startCropConversation() {
             try {
-                const response = await fetch('/.netlify/functions/ai', {
+                const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'conversational_crop' })
@@ -219,7 +219,7 @@
             conversationArea.scrollTop = conversationArea.scrollHeight;
 
             try {
-                const response = await fetch('/.netlify/functions/ai', {
+                const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -371,7 +371,7 @@
                 const landSize = parseFloat(document.getElementById('elig-land')?.value) || 0;
                 const state = document.getElementById('elig-state')?.value || 'all';
 
-                const response = await fetch('/.netlify/functions/ai', {
+                const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'get_schemes', state, landSize })
@@ -5844,7 +5844,7 @@
             if (loc.includes("AP") || loc.includes("Andhra")) state = "Andhra Pradesh";
 
             try {
-                const res = await fetch(`/.netlify/functions/weather?state=${state}`);
+                const res = await fetch(`/api/weather?state=${state}`);
                 const data = await res.json();
                 if (data.success) {
                     // Calculate total rainfall forecast for season (mock logic based on daily)
@@ -5882,7 +5882,7 @@
                 // Determine clean rainfall number
                 const rainVal = parseInt(rainfall.replace(/[^0-9]/g, '')) || 500;
 
-                const response = await fetch('/.netlify/functions/ai?action=crop_recommendation', {
+                const response = await fetch('/api/ai?action=crop_recommendation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

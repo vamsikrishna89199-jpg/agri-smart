@@ -99,6 +99,7 @@
             font-weight: 800;
             background: linear-gradient(135deg, #4ade80, #22c55e);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 2px 20px rgba(74, 222, 128, 0.2);
         }
@@ -386,7 +387,7 @@
         const user = localStorage.getItem('user');
 
         if (token && user) {
-            window.location.href = '/';
+            window.location.href = '/home';
         }
 
         // Form submission

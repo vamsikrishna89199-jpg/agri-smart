@@ -97,6 +97,7 @@
             font-weight: 800;
             background: linear-gradient(135deg, #4ade80, #22c55e);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -715,7 +716,7 @@
         // Check if already logged in
         const token = localStorage.getItem('token');
         if (token) {
-            window.location.href = '/';
+            window.location.href = '/home';
         }
 
         // Password strength checker
