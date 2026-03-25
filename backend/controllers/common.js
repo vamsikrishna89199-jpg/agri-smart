@@ -1,4 +1,4 @@
-const { queryDB, runDB } = require('./database');
+const { queryDB, runDB } = require('../database');
 
 async function handleGetMandiPrices(req, res) {
     const symbols = req.query.symbols || "ZW.COMM,ZC.COMM,SB.COMM,ZR.COMM";

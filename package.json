@@ -2,7 +2,7 @@
   "name": "agrismart-backend",
   "version": "1.0.0",
   "scripts": {
-    "start": "node api/server.js",
+    "start": "node backend/server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {

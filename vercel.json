@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://agri-smart-2hhp.onrender.com/api/$1" },

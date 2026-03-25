@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install
-    startCommand: node api/server.js
+    startCommand: node backend/server.js
     disk:
       name: agrismart-data
       mountPath: /data
