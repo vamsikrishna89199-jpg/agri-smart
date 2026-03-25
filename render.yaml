@@ -1,10 +1,11 @@
 services:
   - type: web
+    rootDirectory: backend
     name: agrismart-api
     runtime: node
     plan: free
     buildCommand: npm install
-    startCommand: node backend/server.js
+    startCommand: node server.js
     disk:
       name: agrismart-data
       mountPath: /data
