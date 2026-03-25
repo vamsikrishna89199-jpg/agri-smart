@@ -1,8 +1,7 @@
 {
-  "redirects": [
-    { "source": "/", "destination": "/index.html", "permanent": false }
-  ],
+  "cleanUrls": true,
   "rewrites": [
+    { "source": "/", "destination": "/index.html" },
     { "source": "/api/:match*", "destination": "https://agri-smart-2hhp.onrender.com/api/:match*" }
   ]
 }
