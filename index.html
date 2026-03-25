@@ -132,12 +132,150 @@
       opacity: 0.8;
     }
 
+    /* STATISTICS */
+    .stats {
+      padding: 80px 20px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .stat-item h3 {
+      font-size: 40px;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .stat-item p {
+      opacity: 0.7;
+      font-size: 16px;
+    }
+
+    /* ABOUT SECTION */
+    .about {
+      padding: 100px 20px;
+      max-width: 1100px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 50px;
+      text-align: left;
+    }
+
+    .about-content h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .about-content p {
+      font-size: 18px;
+      line-height: 1.6;
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+
+    .about-image {
+      flex: 1;
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.1));
+      border-radius: 30px;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 100px;
+    }
+
+    /* TESTIMONIALS */
+    .testimonials {
+      padding: 80px 20px;
+      text-align: center;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1100px;
+      margin: 40px auto;
+    }
+
+    .testimonial-card {
+      padding: 40px;
+      text-align: left;
+      position: relative;
+    }
+
+    .testimonial-card p {
+      font-style: italic;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .author {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    /* CTA */
+    .cta-section {
+      padding: 100px 20px;
+      text-align: center;
+      background: linear-gradient(to bottom, transparent, rgba(74, 222, 128, 0.05));
+    }
+
+    .cta-box {
+      max-width: 800px;
+      margin: auto;
+      padding: 60px;
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cta-box h2 {
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+
     /* FOOTER */
     footer {
-      text-align: center;
-      padding: 20px;
+      padding: 60px 20px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .footer-links a {
+      color: white;
+      text-decoration: none;
       opacity: 0.6;
-      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    .footer-links a:hover {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      .about {
+        flex-direction: column;
+        text-align: center;
+      }
+      .hero h1 { font-size: 36px; }
+      .navbar { padding: 20px; }
     }
   </style>
 </head>
@@ -174,6 +312,28 @@
     </div>
   </section>
 
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h3>98%</h3>
+        <p>AI Accuracy</p>
+      </div>
+      <div class="stat-item">
+        <h3>50k+</h3>
+        <p>Active Farmers</p>
+      </div>
+      <div class="stat-item">
+        <h3>24/7</h3>
+        <p>Voice Assistance</p>
+      </div>
+      <div class="stat-item">
+        <h3>15+</h3>
+        <p>Regional Languages</p>
+      </div>
+    </div>
+  </section>
+
   <!-- FEATURES -->
   <section class="features">
     <h2>Powerful Smart Farming Tools</h2>
@@ -203,9 +363,60 @@
     </div>
   </section>
 
+  <!-- ABOUT -->
+  <section class="about">
+    <div class="about-image glass-card">🚜</div>
+    <div class="about-content">
+      <h2>Empowering Rural Communities</h2>
+      <p>
+        AgriSmart is built on the belief that technology should be accessible to everyone. 
+        Our platform bridges the gap between complex AI data and traditional farming wisdom.
+      </p>
+      <p>
+        From remote soil analysis to automated pest detection, we provide the tools 
+        needed to increase yield and reduce environmental impact.
+      </p>
+      <button class="btn btn-outline">Learn More</button>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <h2>Voice of the Farmers</h2>
+    <div class="testimonial-grid">
+      <div class="testimonial-card glass-card">
+        <p>"The crop recommendation system saved me from a major loss this season. The AI exactly knew which seeds would thrive in my soil."</p>
+        <div class="author">— Rajesh Kumar, Punjab</div>
+      </div>
+      <div class="testimonial-card glass-card">
+        <p>"As an elderly farmer, the voice assistant is my favorite feature. I can check weather and mandi prices just by speaking to my phone."</p>
+        <div class="author">— S. Somaiya, Karnataka</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-box glass-card">
+      <h2>Ready to transform your farm?</h2>
+      <p>Join thousands of farmers making smarter decisions every day and increasing their prosperity.</p>
+      <div class="btn-group" style="margin-top: 30px;">
+        <button class="btn btn-success" onclick="goToSignup()" style="padding: 15px 40px; font-size: 18px;">Create Free Account</button>
+      </div>
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer>
-    © 2026 AgriSmart — Smart Farming Platform
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="login.html">Login</a>
+      <a href="register.html">Register</a>
+    </div>
+    <div style="opacity: 0.6; font-size: 14px; text-align: center;">
+      © 2026 AgriSmart — Smart Farming Platform
+    </div>
   </footer>
 
   <!-- JS -->
@@ -215,7 +426,6 @@
     }
 
     function goToSignup() {
-      // Adjusted to match the actual registration page file
       window.location.href = "register.html";
     }
   </script>
