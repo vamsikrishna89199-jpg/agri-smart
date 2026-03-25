@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AgriSmart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="assets/style.css">
+
+  <style>
+    :root {
+      --accent: #4ade80;
+      --primary: #4ade80;
+      --bg-dark: #0f172a;
+      --text-light: #f8fafc;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: var(--text-light);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .nav-btns button {
+      margin-left: 10px;
+    }
+
+    /* HERO */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .hero-box {
+      max-width: 900px;
+      padding: 50px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+
+    .hero span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 18px;
+      opacity: 0.8;
+      margin-bottom: 30px;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .btn-outline {
+      border: 2px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: black;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .features h2 {
+      margin-bottom: 40px;
+      font-size: 32px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .feature-card {
+      padding: 25px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 20px;
+      opacity: 0.6;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo">🌱 AgriSmart</div>
+    <div class="nav-btns">
+      <button class="btn btn-outline" onclick="goToLogin()">Login</button>
+      <button class="btn btn-success" onclick="goToSignup()">Sign Up</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-box glass-card float">
+
+      <h1>
+        Future of Farming with <span>AgriSmart</span>
+      </h1>
+
+      <p>
+        AI-powered agriculture platform helping farmers make smarter decisions
+        with crop insights, weather intelligence, voice assistance, and smart tools.
+      </p>
+
+      <div class="btn-group">
+        <button class="btn btn-outline" onclick="goToLogin()">Login</button>
+        <button class="btn btn-success pulse" onclick="goToSignup()">Get Started</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <h2>Powerful Smart Farming Tools</h2>
+
+    <div class="features-grid">
+
+      <div class="feature-card glass-card">
+        <h3>🌾 Crop Recommendation</h3>
+        <p>Get AI-based suggestions for the best crops based on soil and weather.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <h3>🌦 Weather Intelligence</h3>
+        <p>Real-time weather insights and forecasts to plan farming activities.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <h3>🎤 Voice Assistant</h3>
+        <p>Interact with AgriSmart using voice commands for ease of use.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <h3>📊 Smart Dashboard</h3>
+        <p>Track all your farming data, tasks, and analytics in one place.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2026 AgriSmart — Smart Farming Platform
+  </footer>
+
+  <!-- JS -->
+  <script>
+    function goToLogin() {
+      window.location.href = "login.html";
+    }
+
+    function goToSignup() {
+      // Adjusted to match the actual registration page file
+      window.location.href = "register.html";
+    }
+  </script>
+
+</body>
+</html>
