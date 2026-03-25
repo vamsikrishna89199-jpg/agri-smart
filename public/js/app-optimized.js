@@ -826,7 +826,7 @@
             auth.signOut().then(() => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             });
         }
 
@@ -1015,7 +1015,7 @@
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
 
         // ==================== MASTER AI VOICE CONTROLLER ====================
@@ -4933,7 +4933,7 @@
             }
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
 
         // FCM Notification registration

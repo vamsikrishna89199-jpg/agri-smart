@@ -716,7 +716,7 @@
         // Check if already logged in
         const token = localStorage.getItem('token');
         if (token) {
-            window.location.href = '/home';
+            window.location.href = 'dashboard.html';
         }
 
         // Password strength checker
@@ -958,7 +958,7 @@
                 }));
 
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = 'dashboard.html';
                 }, 2000);
 
             } catch (error) {

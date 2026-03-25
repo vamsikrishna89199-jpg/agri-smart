@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>AgriSmart</title>
+  <script>
+    // Immediate redirect if logged in
+    if (localStorage.getItem('token') && localStorage.getItem('user')) {
+      window.location.href = "dashboard.html";
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Your CSS -->

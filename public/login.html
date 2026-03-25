@@ -387,7 +387,7 @@
         const user = localStorage.getItem('user');
 
         if (token && user) {
-            window.location.href = '/home';
+            window.location.href = 'dashboard.html';
         }
 
         // Form submission
@@ -442,9 +442,9 @@
                 // Redirect based on role
                 setTimeout(() => {
                     if (userData.role === 'admin') {
-                        window.location.href = '/#admin';
+                        window.location.href = 'dashboard.html#admin';
                     } else {
-                        window.location.href = '/';
+                        window.location.href = 'dashboard.html';
                     }
                 }, 1500);
 
