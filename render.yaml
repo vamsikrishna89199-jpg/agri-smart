@@ -1,6 +1,6 @@
 services:
   - type: web
-    rootDirectory: backend
+    rootDirectory: _backend
     name: agrismart-api
     runtime: node
     plan: free

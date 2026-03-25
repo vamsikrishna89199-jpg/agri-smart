@@ -1,9 +1,0 @@
-{
-  "name": "agrismart-frontend",
-  "version": "1.0.0",
-  "description": "Smart Farming Intelligence Platform Frontend",
-  "scripts": {
-    "build": "echo 'Static Site - No Build step needed'",
-    "start": "echo 'Static Site - Serve HTML'"
-  }
-}
