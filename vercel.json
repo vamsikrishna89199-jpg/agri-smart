@@ -1,11 +1,6 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://agri-smart-2hhp.onrender.com/api/$1" },
-    { "source": "/login", "destination": "/public/login.html" },
-    { "source": "/register", "destination": "/public/register.html" },
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/assets/(.*)", "destination": "/public/assets/$1" },
-    { "source": "/js/(.*)", "destination": "/public/js/$1" }
+    { "source": "/api/(.*)", "destination": "https://agri-smart-2hhp.onrender.com/api/$1" }
   ]
 }
