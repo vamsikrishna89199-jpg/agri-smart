@@ -37,9 +37,14 @@ async function handleConversationalCrop(req, res) {
     if (nextIdx >= CROP_QUESTIONS.length) {
         // Recommendations logic using Groq
         try {
-            const groq = getGroqClient();
             const completion = await groq.chat.completions.create({
-                messages: [{ role: 'system', content: 'Agricultural advisor.' }, { role: 'user', content: `Crops for: ${JSON.stringify(answers)}` }],
+                messages: [{ 
+                    role: 'system', 
+                    content: 'You are an Agricultural Advisor. Return recommendations in a JSON object with a "recommendations" array.' 
+                }, { 
+                    role: 'user', 
+                    content: `Recommend crops for these farm conditions: ${JSON.stringify(answers)}` 
+                }],
                 model: 'llama-3.3-70b-versatile',
                 response_format: { type: 'json_object' }
             });
@@ -68,9 +73,16 @@ async function handleDiseaseDetection(req, res) {
 
     try {
         const completion = await groq.chat.completions.create({
-            messages: [{ role: 'user', content: [{ type: 'text', text: 'Identify disease in JSON' }, { type: 'image_url', image_url: { url: imageUrl } }] }],
-            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            temperature: 0.1
+            messages: [{ 
+                role: 'user', 
+                content: [
+                    { type: 'text', text: 'Analyze this crop image and identify the disease. Return the result in a JSON object with fields: "disease_name", "confidence", "symptoms" (array), "organic_remedies" (array), "treatment_plan" (array), and "chemical_treatment" (string).' }, 
+                    { type: 'image_url', image_url: { url: imageUrl } }
+                ] 
+            }],
+            model: 'llama-3.2-11b-vision-preview',
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
         });
         let content = completion.choices[0].message.content;
         if (content.startsWith('```')) content = content.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
@@ -89,8 +101,14 @@ async function handleVoiceAssistant(req, res) {
     const groq = getGroqClient();
     try {
         const completion = await groq.chat.completions.create({
-            messages: [{ role: 'system', content: 'AgriSmart Brain.' }, { role: 'user', content: query }],
-            model: 'llama-3.1-8b-instant',
+            messages: [{ 
+                role: 'system', 
+                content: 'You are AgriSmart Brain, an AI agricultural assistant. You help farmers with crop advice, weather info, and farm management. Respond only in JSON with fields: "speech" (natural text), "action" (NAVIGATE, CONTROL_PUMP, START_SCAN, or NONE), and "params" (object).' 
+            }, { 
+                role: 'user', 
+                content: query 
+            }],
+            model: 'llama-3.3-70b-versatile',
             response_format: { type: 'json_object' }
         });
         const result = JSON.parse(completion.choices[0].message.content);
@@ -101,4 +119,25 @@ async function handleVoiceAssistant(req, res) {
     }
 }
 
-module.exports = { handleConversationalCrop, handleDiseaseDetection, handleVoiceAssistant };
+async function handleSoilHealth(req, res) {
+    const { soilType, state } = req.body;
+    const groq = getGroqClient();
+    try {
+        const completion = await groq.chat.completions.create({
+            messages: [{ 
+                role: 'system', 
+                content: 'You are a Soil Health Expert. Analyze soil type and state, and return a JSON object with: "score" (0-100), "status" (Excellent, Good, Fair, Poor), "recommendations" (array), and "next_steps" (array).' 
+            }, { 
+                role: 'user', 
+                content: `Soil Type: ${soilType}, Region: ${state}` 
+            }],
+            model: 'llama-3.3-70b-versatile',
+            response_format: { type: 'json_object' }
+        });
+        res.json({ success: true, data: JSON.parse(completion.choices[0].message.content) });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
+module.exports = { handleConversationalCrop, handleDiseaseDetection, handleVoiceAssistant, handleSoilHealth };

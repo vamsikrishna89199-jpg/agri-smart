@@ -20,7 +20,7 @@ async function analyzeDiseaseImage(selectedFile, userNotes = "") {
     // Prepare FormData
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("action", "disease_detection");
+    formData.append("action", "disease_detect");
     if (userNotes) formData.append("prompt", userNotes);
 
     try {

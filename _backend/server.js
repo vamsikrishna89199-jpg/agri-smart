@@ -49,8 +49,24 @@ app.all('/api/ai', async (req, res) => {
         case 'get_schemes': return common.handleGetSchemes(req, res);
         case 'disease_detect': return ai.handleDiseaseDetection(req, res);
         case 'voice_assistant': return ai.handleVoiceAssistant(req, res);
-        case 'conversational_crop': return ai.handleConversationalCrop(req, res);
-        default: res.status(400).json({ success: false, message: 'Unknown action' });
+        case 'conversational_crop':
+        case 'crop_recommendation': return ai.handleConversationalCrop(req, res);
+        case 'market_advisory': return market.handleMarketAdvisory(req, res);
+        case 'soil_health': return ai.handleSoilHealth(req, res);
+        default: res.status(400).json({ success: false, message: `Unknown AI action: ${action}` });
+    }
+});
+
+app.all('/api/manage', async (req, res) => {
+    const action = req.query.action || req.body.action;
+    switch(action) {
+        case 'dashboard': return manage.handleGetDashboard(req, res);
+        case 'pump_control': return manage.handlePumpControl(req, res);
+        case 'seed_check': return manage.handleSeedCheck(req, res);
+        case 'admin_users': return manage.handleAdminUsers(req, res);
+        case 'delete_user': return manage.handleDeleteUser(req, res);
+        case 'call_log': return manage.handleCallLog(req, res);
+        default: res.status(400).json({ success: false, message: `Unknown Manage action: ${action}` });
     }
 });
 
