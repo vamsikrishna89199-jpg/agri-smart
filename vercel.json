@@ -1,6 +1,6 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://agri-smart-2hhp.onrender.com/api/$1" }
+    { "source": "/api/:match*", "destination": "https://agri-smart-2hhp.onrender.com/api/:match*" }
   ]
 }
