@@ -1,13 +1,14 @@
 // Firebase Configuration
 // REPLACE WITH YOUR FIREBASE CONFIG
 const firebaseConfig = {
-    apiKey: "AIzaSyCesJt2xAK0JaNkrlk58gm0MdDhyptuGgc",
-    authDomain: "agrismart-3a789.firebaseapp.com",
-    projectId: "agrismart-3a789",
-    storageBucket: "agrismart-3a789.firebasestorage.app",
-    messagingSenderId: "989430916342",
-    appId: "1:989430916342:web:63cf786e49217af07838d7",
-    measurementId: "G-41PRY3N5HL"
+    apiKey: "AIzaSyA483NjEi32a7D0X3pHpkrqYxkV_XiW5Eg",
+    authDomain: "agrismart-c36de.firebaseapp.com",
+    databaseURL: "https://agrismart-c36de-default-rtdb.firebaseio.com",
+    projectId: "agrismart-c36de",
+    storageBucket: "agrismart-c36de.firebasestorage.app",
+    messagingSenderId: "271659192597",
+    appId: "1:271659192597:web:9c8ff471d25ecfb11e991c",
+    measurementId: "G-6FG1HMW5S2"
 };
 
 // Initialize Firebase
@@ -20,11 +21,18 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 let messaging = null;
 try {
-    if (firebase.messaging.isSupported()) {
-        messaging = firebase.messaging();
+    if (typeof firebase.messaging.isSupported === 'function') {
+        const supportedResult = firebase.messaging.isSupported();
+        if (supportedResult instanceof Promise) {
+            supportedResult.then(supported => {
+                if (supported) window.messaging = firebase.messaging();
+            }).catch(() => { /* Silent fallback */ });
+        } else if (supportedResult) {
+            messaging = firebase.messaging();
+        }
     }
 } catch (e) {
-    console.warn("Firebase Messaging not supported in this context");
+    // Suppressed: Firebase Messaging not supported in this context
 }
 
 // Expose to window for index.html access
