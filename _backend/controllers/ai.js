@@ -57,18 +57,22 @@ async function handleConversationalCrop(req, res) {
 }
 
 async function handleDiseaseDetection(req, res) {
-    let { imageUrl, imageBytes, imageType } = req.body;
-    // Handle imageBytes from multipart if needed (Express middleware handles this differently)
-    if (req.file) {
-        imageBytes = req.file.buffer;
-        imageType = req.file.mimetype;
-    }
+    let imageUrl = req.body.imageUrl;
+    let imageBytes = req.body.file || req.body.imageBytes;
+    let imageType = req.body.fileType || req.body.imageType;
 
-    if (imageBytes) {
+    if (imageBytes && Buffer.isBuffer(imageBytes)) {
         imageUrl = `data:${imageType || 'image/jpeg'};base64,${imageBytes.toString('base64')}`;
     }
 
+    if (!imageUrl) {
+        return res.status(400).json({ success: false, error: 'No image provided. Please upload a crop image.' });
+    }
+
     const visionKey = process.env.GROQ_VISION_API_KEY || process.env.GROQ_API_KEY;
+    if (!visionKey) {
+        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY in the backend .env file.' });
+    }
     const groq = new Groq({ apiKey: visionKey });
 
     try {
@@ -94,11 +98,15 @@ async function handleDiseaseDetection(req, res) {
 
 async function handleVoiceAssistant(req, res) {
     let { query, audioBytes } = req.body;
-    if (req.file && !query) {
-        // Transcribe logic (skipped for brevity, but same as ai.js)
+
+    if (!query) {
+        return res.status(400).json({ success: false, error: 'No query provided' });
     }
 
     const groq = getGroqClient();
+    if (!groq) {
+        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
+    }
     try {
         const completion = await groq.chat.completions.create({
             messages: [{ 
@@ -122,6 +130,9 @@ async function handleVoiceAssistant(req, res) {
 async function handleSoilHealth(req, res) {
     const { soilType, state } = req.body;
     const groq = getGroqClient();
+    if (!groq) {
+        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
+    }
     try {
         const completion = await groq.chat.completions.create({
             messages: [{ 
