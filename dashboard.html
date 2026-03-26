@@ -66,6 +66,9 @@
                 <li class="nav-item" onclick="navigate('dash')"><i class="ph ph-chart-pie-slice"></i> <span
                         data-i18n="nav_dashboard">Dashboard</span>
                 </li>
+                <li class="nav-item" onclick="navigate('farmer_tools')"><i class="ph ph-toolbox"></i> <span
+                        data-i18n="nav_tools">Farmer Tools</span>
+                </li>
                 <li class="nav-item" onclick="toggleMoreMenu()"><i class="ph ph-squares-four"></i> <span
                         data-i18n="nav_more">More</span>
                 </li>
@@ -112,8 +115,14 @@
             <div class="more-card" onclick="navigate('irrigation'); toggleMoreMenu()">
                 <i class="ph ph-drop"></i> <span>Irrigation</span>
             </div>
+            <div class="more-card" onclick="navigate('farmer_tools'); toggleMoreMenu()">
+                <i class="ph ph-toolbox"></i> <span>Farmer Tools</span>
+            </div>
             <div class="more-card" onclick="navigate('marketplace'); toggleMoreMenu()">
                 <i class="ph ph-storefront"></i> <span>Marketplace</span>
+            </div>
+            <div class="more-card" onclick="navigate('community'); toggleMoreMenu()">
+                <i class="ph ph-users-three"></i> <span>Community</span>
             </div>
             <div class="more-card" onclick="navigate('logistics'); toggleMoreMenu()">
                 <i class="ph ph-truck"></i> <span>Logistics</span>
@@ -2414,6 +2423,391 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- 9. Farmer Tools -->
+            <section id="farmer_tools" class="page-section">
+                <h2><i class="ph ph-toolbox"></i> Farmer Tools</h2>
+                <div class="row g-4 mt-2">
+                    
+                    <!-- Smart Weather Alerts -->
+                    <div class="col-md-4">
+                        <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: #3b82f6 !important;">
+                            <h4 class="mb-3 d-flex align-items-center gap-2">
+                                <i class="ph ph-cloud-warning text-primary fs-3"></i> Smart Weather Alerts
+                            </h4>
+                            <div class="alert alert-warning bg-warning bg-opacity-10 border-warning border-opacity-25 text-white mb-3">
+                                <i class="ph ph-warning-circle"></i> <strong>Upcoming Rain:</strong> Heavy rainfall expected in 48 hours. Delay spraying pesticides.
+                            </div>
+                            <div class="alert alert-success bg-success bg-opacity-10 border-success border-opacity-25 text-white">
+                                <i class="ph ph-check-circle"></i> <strong>Sowing Time:</strong> Soil moisture is optimal for Kharif sowing.
+                            </div>
+                            <button class="btn btn-outline-light w-100 mt-2 btn-sm rounded-pill" onclick="showToast('Weather updated!', 'info')">
+                                <i class="ph ph-arrows-clockwise"></i> Refresh Forecast
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Profit Calculator -->
+                    <div class="col-md-4">
+                        <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: var(--accent) !important;">
+                            <h4 class="mb-3 d-flex align-items-center gap-2">
+                                <i class="ph ph-calculator text-accent fs-3"></i> Profit Calculator
+                            </h4>
+                            <div class="mb-2">
+                                <label class="small text-white-50">Seeds Cost (₹)</label>
+                                <input type="number" id="calc-seeds" class="form-control glass-input" value="5000">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-white-50">Fertilizer & Pesticides (₹)</label>
+                                <input type="number" id="calc-fert" class="form-control glass-input" value="12000">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-white-50">Labor & Machinery (₹)</label>
+                                <input type="number" id="calc-labor" class="form-control glass-input" value="15000">
+                            </div>
+                            <div class="mb-3">
+                                <label class="small text-white-50">Expected Revenue (₹)</label>
+                                <input type="number" id="calc-revenue" class="form-control glass-input" value="75000">
+                            </div>
+                            <button class="btn btn-accent w-100 rounded-pill mb-3" onclick="calculateProfit()">Calculate</button>
+                            <div id="calc-result" class="text-center fw-bold fs-5 d-none">
+                                Estimated Profit: <span class="text-success">₹43,000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Todo -->
+                    <div class="col-md-4">
+                        <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: #f59e0b !important;">
+                            <h4 class="mb-3 d-flex align-items-center gap-2">
+                                <i class="ph ph-list-checks text-warning fs-3"></i> Smart Todo list
+                            </h4>
+                            <ul class="list-unstyled mb-0" id="smart-todo-list">
+                                <!-- Populated dynamically from Firebase -->
+                                <div class="text-center small opacity-50 py-3">Loading tasks...</div>
+                            </ul>
+                            <div class="input-group mt-3">
+                                <input type="text" id="new-todo-input" class="form-control glass-input" placeholder="Add new task...">
+                                <button class="btn btn-outline-light" onclick="addTodoTask()"><i class="ph ph-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+            
+            <!-- 10. Marketplace -->
+            <section id="marketplace" class="page-section">
+                <h2><i class="ph ph-storefront"></i> Farmer Marketplace</h2>
+                
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-pills mb-4" id="marketTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active bg-black bg-opacity-50 text-white rounded-pill border border-white border-opacity-25" data-bs-toggle="pill" data-bs-target="#sell-crops">Sell Crops</button>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="nav-link bg-black bg-opacity-50 text-white rounded-pill border border-white border-opacity-25" data-bs-toggle="pill" data-bs-target="#buy-inputs">Input Store (Buy)</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Sell Crops Tab -->
+                    <div class="tab-pane fade show active" id="sell-crops">
+                        <div class="row g-4">
+                            <div class="col-md-8">
+                                <div class="glass-card">
+                                    <h4 class="mb-3 d-flex align-items-center gap-2"><i class="ph ph-basket text-accent fs-3"></i> Active Listings</h4>
+                                    <div class="list-group" id="market-listings-container">
+                                        <!-- Real listings injected here -->
+                                        <div class="text-center small opacity-50 py-3">Loading active listings...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: var(--accent) !important;">
+                                    <h4 class="mb-3">Sell Direct (0% Fee)</h4>
+                                    <div class="mb-2">
+                                        <label class="small text-white-50">Crop Name</label>
+                                        <input type="text" id="market-crop-name" class="form-control glass-input" placeholder="e.g. Rice (Sona Masuri)">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="small text-white-50">Quantity (Quintals)</label>
+                                        <input type="number" id="market-crop-qty" class="form-control glass-input" placeholder="e.g. 100">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="small text-white-50">Expected Price (Per Q)</label>
+                                        <input type="number" id="market-crop-price" class="form-control glass-input" placeholder="e.g. 2500">
+                                    </div>
+                                    <button class="btn btn-accent w-100 rounded-pill" onclick="publishMarketListing()"><i class="ph ph-plus"></i> Create Listing</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Store Tab -->
+                    <div class="tab-pane fade" id="buy-inputs">
+                        <div class="row g-4">
+                            <!-- Input Product 1 -->
+                            <div class="col-md-4">
+                                <div class="glass-card text-center p-3 border-top border-4" style="border-top-color: #3b82f6 !important;">
+                                    <div class="display-1 mb-2">🌱</div>
+                                    <h5 class="text-white">Hybrid Cotton Seeds</h5>
+                                    <p class="small text-muted">Bollgard II - High Yield</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <h4 class="text-accent mb-0">₹850</h4>
+                                        <button class="btn btn-sm btn-outline-light rounded-pill" onclick="showToast('Added to cart', 'success')">Buy Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Input Product 2 -->
+                            <div class="col-md-4">
+                                <div class="glass-card text-center p-3 border-top border-4" style="border-top-color: #10b981 !important;">
+                                    <div class="display-1 mb-2">🧪</div>
+                                    <h5 class="text-white">Nano Urea (Liquid)</h5>
+                                    <p class="small text-muted">IFFCO - 500ml Bottle</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <h4 class="text-accent mb-0">₹225</h4>
+                                        <button class="btn btn-sm btn-outline-light rounded-pill" onclick="showToast('Added to cart', 'success')">Buy Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Input Product 3 -->
+                            <div class="col-md-4">
+                                <div class="glass-card text-center p-3 border-top border-4" style="border-top-color: #f59e0b !important;">
+                                    <div class="display-1 mb-2">🚜</div>
+                                    <h5 class="text-white">Drip Setup Kit</h5>
+                                    <p class="small text-muted">Jain Irrigation - 1 Acre</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <h4 class="text-accent mb-0">₹18,500</h4>
+                                        <button class="btn btn-sm btn-outline-light rounded-pill" onclick="showToast('Added to cart', 'success')">Buy Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11. Community -->
+            <section id="community" class="page-section">
+                <h2><i class="ph ph-users-three"></i> Farmer Community</h2>
+                
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-pills mb-4" id="communityTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active bg-black bg-opacity-50 text-white rounded-pill border border-white border-opacity-25" data-bs-toggle="pill" data-bs-target="#community-feed">Community Feed</button>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="nav-link bg-black bg-opacity-50 text-white rounded-pill border border-white border-opacity-25" data-bs-toggle="pill" data-bs-target="#expert-chat">Expert Chat</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Community Feed Tab -->
+                    <div class="tab-pane fade show active" id="community-feed">
+                        <div class="row g-4">
+                            <div class="col-lg-8">
+                                <!-- Create Post -->
+                                <div class="glass-card mb-4 p-3 border-top border-4" style="border-top-color: var(--accent) !important;">
+                                    <div class="d-flex gap-3">
+                                        <div class="profile-pic-container flex-shrink-0" style="width:40px; height:40px;">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=vamsi" class="w-100 h-100 rounded-circle border border-2 border-accent">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <textarea id="community-post-content" class="form-control glass-input mb-2 border-0" rows="2" placeholder="Share a problem, solution, or photo..."></textarea>
+                                            <div id="community-image-preview" class="mb-2" style="display: none;"></div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <input type="file" id="community-post-image" accept="image/*" style="display: none;" onchange="previewCommunityImage(event)">
+                                                <button class="btn btn-sm btn-link text-white text-decoration-none" onclick="triggerCommunityImageUpload()"><i class="ph ph-camera fs-5"></i> Add Photo</button>
+                                                <button id="community-post-btn" class="btn btn-accent btn-sm rounded-pill px-4" onclick="publishCommunityPost()">Post</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Post Stream -->
+                                <div id="community-posts-container">
+                                    <div class="text-center small opacity-50 py-3">Loading community posts...</div>
+                                </div>
+                            </div>
+                            <!-- Sidebar items -->
+                            <div class="col-lg-4">
+                                <div class="glass-card mb-3">
+                                    <h5 class="mb-3 d-flex align-items-center gap-2"><i class="ph-fill ph-fire text-warning"></i> Trending Topics</h5>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-black bg-opacity-50 border border-white border-opacity-25 p-2 px-3 rounded-pill cursor-pointer hover-accent">#CottonYield</span>
+                                        <span class="badge bg-black bg-opacity-50 border border-white border-opacity-25 p-2 px-3 rounded-pill cursor-pointer hover-accent">#MonsoonPrep</span>
+                                        <span class="badge bg-black bg-opacity-50 border border-white border-opacity-25 p-2 px-3 rounded-pill cursor-pointer hover-accent">#OrganicMantra</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expert Chat Tab -->
+                    <div class="tab-pane fade" id="expert-chat">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="glass-card h-100 p-0 overflow-hidden">
+                                    <div class="p-3 border-bottom border-white border-opacity-10 bg-black bg-opacity-50 d-flex align-items-center justify-content-between">
+                                        <h5 class="mb-0">Available Experts</h5>
+                                    </div>
+                                    <div class="list-group list-group-flush border-0">
+                                        <button class="list-group-item list-group-item-action bg-transparent text-white border-white border-opacity-10 p-3 active" style="background: rgba(74, 222, 128, 0.1) !important;">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="position-relative">
+                                                    <div class="bg-accent rounded-circle d-flex align-items-center justify-content-center text-black" style="width: 40px; height: 40px;"><i class="ph ph-robot fs-4"></i></div>
+                                                    <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-dark rounded-circle"></span>
+                                                </div>
+                                                <div class="text-start">
+                                                    <div class="fw-bold">AgriSmart AI</div>
+                                                    <div class="x-small opacity-70">Instant AI Responses</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <button class="list-group-item list-group-item-action bg-transparent text-white border-white border-opacity-10 p-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="position-relative">
+                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=DrRao" class="rounded-circle" width="40" height="40">
+                                                    <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-dark rounded-circle"></span>
+                                                </div>
+                                                <div class="text-start">
+                                                    <div class="fw-bold">Dr. K. Rao <i class="ph-fill ph-seal-check text-success"></i></div>
+                                                    <div class="x-small opacity-70">Agronomist (10+ Yrs)</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <button class="list-group-item list-group-item-action bg-transparent text-white border-white border-opacity-10 p-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="position-relative">
+                                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" class="rounded-circle" width="40" height="40">
+                                                    <span class="position-absolute bottom-0 end-0 p-1 bg-warning border border-dark rounded-circle"></span>
+                                                </div>
+                                                <div class="text-start">
+                                                    <div class="fw-bold">Priya Sharma <i class="ph-fill ph-seal-check text-success"></i></div>
+                                                    <div class="x-small opacity-70">Pest Control Specialist</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="glass-card h-100 d-flex flex-column p-0 border-top border-4" style="border-top-color: var(--accent) !important; min-height: 400px;">
+                                    <div class="p-3 border-bottom border-white border-opacity-10 d-flex align-items-center gap-3 bg-black bg-opacity-50">
+                                        <div class="bg-accent rounded-circle d-flex align-items-center justify-content-center text-black" style="width: 40px; height: 40px;"><i class="ph ph-robot fs-4"></i></div>
+                                        <div>
+                                            <h5 class="mb-0">AgriSmart AI</h5>
+                                            <div class="small text-success">Online</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex-grow-1 p-3 overflow-auto" id="expert-chat-window" style="background: rgba(0,0,0,0.2);">
+                                        <div class="text-center small opacity-50 my-3">Today, 10:15 AM</div>
+                                        
+                                        <!-- AI Msg -->
+                                        <div class="d-flex mb-3">
+                                            <div class="bg-black bg-opacity-50 rounded p-3 text-white border border-white border-opacity-10" style="max-width: 80%; border-bottom-left-radius: 0 !important;">
+                                                Hello! I can answer any detailed agricultural questions you have. Just ask!
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                    
+                                    <div class="p-3 bg-black bg-opacity-50 border-top border-white border-opacity-10">
+                                        <div class="input-group">
+                                            <button class="btn btn-outline-light border-0"><i class="ph ph-paperclip"></i></button>
+                                            <input type="text" class="form-control glass-input border-0 bg-transparent text-white" placeholder="Type a message...">
+                                            <button class="btn btn-accent rounded-pill px-4" onclick="showToast('Message sent to AI Expert!', 'success')"><i class="ph-fill ph-paper-plane-right"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 12. Smart Irrigation & IoT -->
+            <section id="irrigation" class="page-section">
+                <h2><i class="ph ph-drop"></i> Smart Irrigation & Sensors</h2>
+                <div class="row g-4 mt-2">
+                    
+                    <!-- IoT Sensors Simulation -->
+                    <div class="col-md-6">
+                        <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: #3b82f6 !important;">
+                            <h4 class="mb-3 d-flex align-items-center gap-2">
+                                <i class="ph ph-cpu text-primary fs-3"></i> Live Field Sensors
+                            </h4>
+                            <div class="d-flex justify-content-between align-items-center mb-3 bg-black bg-opacity-25 p-3 rounded border border-white border-opacity-10">
+                                <div>
+                                    <div class="small opacity-70">Soil Moisture (Sector A)</div>
+                                    <div class="fs-4 fw-bold text-accent" id="sensor-moisture">42%</div>
+                                </div>
+                                <i class="ph-fill ph-waves text-accent fs-1 opacity-50"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3 bg-black bg-opacity-25 p-3 rounded border border-white border-opacity-10">
+                                <div>
+                                    <div class="small opacity-70">Soil Temperature</div>
+                                    <div class="fs-4 fw-bold text-warning" id="sensor-temp">28°C</div>
+                                </div>
+                                <i class="ph-fill ph-thermometer text-warning fs-1 opacity-50"></i>
+                            </div>
+                            <div class="form-check form-switch mt-4 d-flex align-items-center justify-content-between px-0">
+                                <div>
+                                    <h6 class="mb-0">Auto-Irrigation Trigger</h6>
+                                    <small class="text-white-50">Turn pump on when moisture < 30%</small>
+                                </div>
+                                <input class="form-check-input ms-3" type="checkbox" role="switch" id="autoIrrigateTrigger" checked style="transform: scale(1.3);">
+                            </div>
+                            <div class="mt-4 text-center">
+                                <button class="btn btn-outline-primary rounded-pill w-100" id="pumpControlButton" onclick="togglePumpManual()">
+                                    <i class="ph-bold ph-power"></i> Turn Manual Pump ON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Irrigation Planner -->
+                    <div class="col-md-6">
+                        <div class="glass-card h-100 p-4 border-top border-4" style="border-top-color: var(--accent) !important;">
+                            <h4 class="mb-3 d-flex align-items-center gap-2">
+                                <i class="ph ph-calendar-check text-accent fs-3"></i> Irrigation Planner
+                            </h4>
+                            <div class="mb-3">
+                                <label class="small text-white-50">Crop Type</label>
+                                <select class="form-select glass-input">
+                                    <option value="cotton">Cotton (Flowering Stage)</option>
+                                    <option value="rice">Rice (Vegetative Stage)</option>
+                                    <option value="wheat">Wheat (Tillering Stage)</option>
+                                </select>
+                            </div>
+                            <!-- Schedule Generated via Simulation -->
+                            <div class="list-group mb-3">
+                                <div class="list-group-item bg-black bg-opacity-25 text-white border-white border-opacity-10 rounded mb-2">
+                                    <div class="d-flex w-100 justify-content-between">
+                                      <h6 class="mb-1 text-accent"><i class="ph-fill ph-clock"></i> Next Watering</h6>
+                                      <small>In 14 hours</small>
+                                    </div>
+                                    <p class="mb-1 small">Run drip system for 45 mins. (Based on upcoming dry weather & low soil moisture).</p>
+                                </div>
+                                <div class="list-group-item bg-black bg-opacity-25 text-white border-white border-opacity-10 rounded mb-2">
+                                    <div class="d-flex w-100 justify-content-between">
+                                      <h6 class="mb-1 text-primary"><i class="ph-fill ph-calendar"></i> Weekend Schedule</h6>
+                                      <small>Sat & Sun</small>
+                                    </div>
+                                    <p class="mb-1 small px-0">Pause irrigation. (Heavy rainfall forecasted for your region over the weekend).</p>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-white small mb-0 rounded">
+                                <i class="ph-fill ph-info"></i> AI seamlessly cross-references weather APIs and real-time NPK/Moisture sensor data to build this schedule.
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </section>
         </main>

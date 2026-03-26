@@ -72,8 +72,8 @@ app.all('/api/ai', async (req, res) => {
             case 'get_schemes': return common.handleGetSchemes(req, res);
             case 'disease_detect': return ai.handleDiseaseDetection(req, res);
             case 'voice_assistant': return ai.handleVoiceAssistant(req, res);
-            case 'conversational_crop':
-            case 'crop_recommendation': return ai.handleConversationalCrop(req, res);
+            case 'conversational_crop': return ai.handleConversationalCrop(req, res);
+            case 'crop_recommendation': return ai.handleCropRecommendation(req, res);
             case 'market_advisory': return market.handleMarketAdvisory(req, res);
             case 'soil_health': return ai.handleSoilHealth(req, res);
             default: 

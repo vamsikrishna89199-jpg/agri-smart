@@ -59,6 +59,58 @@ async function handleConversationalCrop(req, res) {
     res.json({ success: true, data: { question: CROP_QUESTIONS[nextIdx], questionNumber: nextIdx + 1, totalQuestions: CROP_QUESTIONS.length, isComplete: false, answers } });
 }
 
+async function handleCropRecommendation(req, res) {
+    console.log("[AI] Starting Crop Recommendation...");
+    const { location, season, soil_type, rainfall, previous_crop } = req.body;
+
+    const groq = getGroqClient();
+    if (!groq) {
+        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
+    }
+
+    try {
+        const prompt = `
+        Act as an expert Agricultural Advisor in India. Provide the best crop recommendation based on these conditions:
+        - Location: ${location}
+        - Season: ${season}
+        - Soil Type & Fertility: ${soil_type}
+        - Rainfall/Water: ${rainfall}mm
+        - Previous Crop: ${previous_crop}
+        
+        Account for weather patterns and price fluctuations to provide a realistic "risk_level" (Low, Medium, or High).
+        Return purely a JSON object with this exact structure (no markdown tags like \`\`\`json):
+        {
+          "best_crop": {
+            "name": "English name of crop",
+            "local_name": "Telugu or internal name",
+            "yield_range": "Expected yield per acre (e.g. 15-20 quintals/acre)",
+            "profit_potential": "Estimated profit properly formatted in INR (e.g. ₹60,000-80,000/acre)",
+            "risk_level": "Low",
+            "reason": "Detailed explanation of why this is best, mentioning soil and weather",
+            "fertilizer_schedule": [ { "stage": "...", "product": "...", "dosage": "...", "instructions": "..." } ],
+            "pesticide_advisory": [ { "pest": "...", "product": "...", "timing": "...", "notes": "..." } ]
+          },
+          "alternatives": [
+            { "name": "...", "risk_level": "...", "reason": "...", "yield_range": "...", "suitability_score": 85 }
+          ]
+        }`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: 'system', content: 'You are an Agricultural Advisor. Output valid JSON only.' }, { role: 'user', content: prompt }],
+            model: 'llama-3.3-70b-versatile',
+            response_format: { type: 'json_object' },
+            temperature: 0.2
+        });
+
+        const content = completion.choices[0].message.content;
+        const data = JSON.parse(content);
+        res.json({ success: true, data });
+    } catch (err) {
+        console.error("[AI] Crop Recommendation Error:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
 async function handleDiseaseDetection(req, res) {
     console.log("[AI] Starting Disease Detection...");
     let imageUrl = req.body.imageUrl;
@@ -205,4 +257,4 @@ async function handleSoilHealth(req, res) {
     }
 }
 
-module.exports = { handleConversationalCrop, handleDiseaseDetection, handleVoiceAssistant, handleSoilHealth };
+module.exports = { handleConversationalCrop, handleCropRecommendation, handleDiseaseDetection, handleVoiceAssistant, handleSoilHealth };

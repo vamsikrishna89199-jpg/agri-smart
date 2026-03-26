@@ -771,6 +771,32 @@
             fetchAiHistory(); // Load history for dashboard/profile on start
         }
 
+        // === FARMER TOOLS ===
+        function calculateProfit() {
+            const seeds = parseFloat(document.getElementById('calc-seeds').value) || 0;
+            const fert = parseFloat(document.getElementById('calc-fert').value) || 0;
+            const labor = parseFloat(document.getElementById('calc-labor').value) || 0;
+            const revenue = parseFloat(document.getElementById('calc-revenue').value) || 0;
+            
+            const totalCost = seeds + fert + labor;
+            const profit = revenue - totalCost;
+            
+            const resultDiv = document.getElementById('calc-result');
+            const resultSpan = resultDiv.querySelector('span');
+            
+            resultSpan.textContent = "₹" + profit.toLocaleString('en-IN');
+            if (profit >= 0) {
+                resultSpan.className = "text-success";
+                resultDiv.innerHTML = 'Estimated Profit: <span class="text-success">₹' + profit.toLocaleString('en-IN') + '</span>';
+            } else {
+                resultSpan.className = "text-danger";
+                resultDiv.innerHTML = 'Estimated Loss: <span class="text-danger">₹' + Math.abs(profit).toLocaleString('en-IN') + '</span>';
+            }
+            
+            resultDiv.classList.remove('d-none');
+            showToast('Profit Calculated successfully', 'success');
+        }
+
         // === LIVE LOCATION TRACKING ===
         async function updateLiveLocation() {
             const locElement = document.getElementById('loc-full-address');
@@ -6166,12 +6192,323 @@
                 });
         }
 
-        // Initialize on auth state change
+        // Initialize global feeds that don't require auth
+        setTimeout(() => {
+            if (typeof initCommunityFeed === 'function') initCommunityFeed();
+            if (typeof initMarketplace === 'function') initMarketplace();
+        }, 1000);
+
+        // Initialize user-specific features on auth state change
         if (auth_fb) {
             auth_fb.onAuthStateChanged((user) => {
                 if (user) {
                     // Wait a bit longer to ensure Firestore is ready
-                    setTimeout(() => initMessageNotificationListener(user), 2000);
+                    setTimeout(() => {
+                        initMessageNotificationListener(user);
+                        initTodos(user);
+                    }, 2000);
                 }
             });
         }
+
+
+        // ==================== NEW FEATURES PERSISTENCE ====================
+
+        // --- Community Feed Image Handlers ---
+        let compressedCommunityImageBase64 = null;
+
+        window.triggerCommunityImageUpload = function() {
+            document.getElementById('community-post-image')?.click();
+        };
+
+        window.previewCommunityImage = function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Compress image using Canvas to avoid Firestore 1MB limit
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Export as high-compression JPEG Base64
+                        compressedCommunityImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
+
+                        const previewContainer = document.getElementById('community-image-preview');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = `<img src="${compressedCommunityImageBase64}" style="max-height: 100px; border-radius: 8px;" class="mt-2"><br><button class="btn btn-sm btn-link text-danger p-0 mt-1" onclick="clearCommunityImage()">Remove Photo</button>`;
+                            previewContainer.style.display = 'block';
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.clearCommunityImage = function() {
+            compressedCommunityImageBase64 = null;
+            const input = document.getElementById('community-post-image');
+            if(input) input.value = '';
+            const previewContainer = document.getElementById('community-image-preview');
+            if(previewContainer) previewContainer.style.display = 'none';
+        };
+
+        // --- Community Feed ---
+        function initCommunityFeed() {
+            if (!db_fs) return;
+            db_fs.collection('community_posts').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+                const container = document.getElementById('community-posts-container');
+                if (!container) return;
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="text-center small opacity-50 py-4">No posts yet. Be the first to share!</div>';
+                    return;
+                }
+                
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
+                    const timeAgo = post.timestamp ? Math.floor((Date.now() - post.timestamp.toDate().getTime()) / 60000) + 'm ago' : 'Just now';
+                    const imgHtml = post.imageUrl ? `<img src="${post.imageUrl}" class="w-100 rounded mt-2" style="max-height: 300px; object-fit: cover;">` : '';
+                    
+                    html += `
+                    <div class="glass-card mb-3 p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}" width="32" height="32" class="rounded-circle">
+                                <div>
+                                    <div class="fw-bold small">${post.authorName}</div>
+                                    <div class="x-small opacity-50">${timeAgo}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="small text-white-50 mt-2">${post.content}</p>
+                        ${imgHtml}
+                        <div class="d-flex gap-3 mt-3 border-top border-white border-opacity-10 pt-2">
+                            <button class="btn btn-sm btn-link text-white text-decoration-none p-0" onclick="likeCommunityPost('${doc.id}', ${post.likes || 0})"><i class="ph-fill ph-thumbs-up text-accent"></i> ${post.likes || 0}</button>
+                            <button class="btn btn-sm btn-link text-white text-decoration-none p-0"><i class="ph-bold ph-chat-circle"></i> Reply</button>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }, (error) => console.error("Error fetching community feed:", error));
+        }
+
+        window.publishCommunityPost = async function() {
+            const input = document.getElementById('community-post-content');
+            const content = input?.value.trim();
+            if (!content && !compressedCommunityImageBase64) return showToast('Please enter a message or add a photo.', 'warning');
+            
+            const user = auth_fb.currentUser;
+            if (!user) return showToast('You must be logged in to post.', 'error');
+            
+            const btn = document.getElementById('community-post-btn');
+            const originalBtnHtml = btn?.innerHTML || 'Post';
+            if (btn) {
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+                btn.disabled = true;
+            }
+            
+            // Get user's name
+            let authorName = user.displayName || 'Farmer';
+            try {
+                const userDoc = await db_fs.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().name) authorName = userDoc.data().name;
+            } catch (e) { console.warn(e); }
+
+            try {
+                await db_fs.collection('community_posts').add({
+                    authorId: user.uid,
+                    authorName: authorName,
+                    content: content,
+                    imageUrl: compressedCommunityImageBase64, // Directly save the compressed Base64 string
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: 0
+                });
+                
+                if (input) input.value = '';
+                clearCommunityImage();
+                showToast('Post published with photo!', 'success');
+            } catch (error) {
+                console.error("Error posting:", error);
+                showToast('Failed to post. Try again.', 'error');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalBtnHtml;
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        window.likeCommunityPost = async function(postId, currentLikes) {
+            try {
+                await db_fs.collection('community_posts').doc(postId).update({
+                    likes: currentLikes + 1
+                });
+            } catch (e) { console.error('Error liking post', e); }
+        };
+
+        // --- Marketplace Active Listings ---
+        function initMarketplace() {
+            if (!db_fs) return;
+            db_fs.collection('market_listings').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+                const container = document.getElementById('market-listings-container');
+                if (!container) return;
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="text-center small opacity-50 py-4">No active listings currently available.</div>';
+                    return;
+                }
+                
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const listing = doc.data();
+                    html += `
+                    <div class="list-group-item bg-black bg-opacity-25 text-white border-white border-opacity-10 d-flex justify-content-between align-items-center mb-2 rounded">
+                        <div>
+                            <h5 class="mb-1 text-accent">${listing.cropName} (${listing.quantity} Quintals)</h5>
+                            <small class="opacity-70">${listing.sellerName || 'Verified Seller'} <i class="ph-fill ph-check-circle text-success"></i></small>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="mb-0">₹${listing.price}/q</h5>
+                            <button class="btn btn-sm btn-outline-light mt-2 rounded-pill">Contact Buyer</button>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        window.publishMarketListing = async function() {
+            const name = document.getElementById('market-crop-name')?.value.trim();
+            const qty = document.getElementById('market-crop-qty')?.value.trim();
+            const price = document.getElementById('market-crop-price')?.value.trim();
+            
+            if (!name || !qty || !price) return showToast('Please fill all listing fields!', 'warning');
+            
+            const user = auth_fb.currentUser;
+            if (!user) return showToast('You must be logged in to sell.', 'error');
+            
+            let sellerName = user.displayName || 'Verified Farmer';
+            try {
+                const userDoc = await db_fs.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().name) sellerName = userDoc.data().name;
+            } catch (e) { console.warn(e); }
+
+            try {
+                await db_fs.collection('market_listings').add({
+                    sellerId: user.uid,
+                    sellerName: sellerName,
+                    cropName: name,
+                    quantity: Number(qty),
+                    price: Number(price),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                document.getElementById('market-crop-name').value = '';
+                document.getElementById('market-crop-qty').value = '';
+                document.getElementById('market-crop-price').value = '';
+                showToast('Listing active instantly! 0% Fees applied.', 'success');
+            } catch (error) {
+                console.error("Error creating listing:", error);
+                showToast('Failed to create listing', 'error');
+            }
+        };
+
+        // --- Smart Todo List ---
+        let currentTodoUser = null;
+        function initTodos(user) {
+            currentTodoUser = user;
+            if (!db_fs || !user) return;
+            
+            db_fs.collection('users').doc(user.uid).collection('todos').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+                const container = document.getElementById('smart-todo-list');
+                if (!container) return;
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="text-center small opacity-50 py-3">All caught up! Add a new task below.</div>';
+                    return;
+                }
+                
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const t = doc.data();
+                    const isCheckedStr = t.completed ? 'checked' : '';
+                    const strikeStr = t.completed ? 'text-decoration-line-through opacity-50' : '';
+                    const color = t.color || 'var(--accent)';
+                    
+                    html += `
+                    <li class="p-3 mb-2 rounded" style="background: rgba(255,255,255,0.05); border-left: 3px solid ${color};">
+                        <div class="form-check d-flex align-items-center gap-2">
+                            <input class="form-check-input" type="checkbox" id="task-${doc.id}" ${isCheckedStr} onchange="toggleTodoTask('${doc.id}', this.checked)">
+                            <label class="form-check-label flex-grow-1 ${strikeStr}" for="task-${doc.id}">
+                                ${t.text}
+                            </label>
+                            <button class="btn btn-link text-danger p-0" onclick="deleteTodoTask('${doc.id}')"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </li>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        window.addTodoTask = async function() {
+            const input = document.getElementById('new-todo-input');
+            const text = input?.value.trim();
+            if (!text) return;
+            
+            if (!currentTodoUser) return showToast('Please log in to add tasks.', 'warning');
+            
+            // Randomly assign a color stripe for fun UX
+            const colors = ['var(--accent)', '#f59e0b', '#ef4444', '#3b82f6'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+            try {
+                await db_fs.collection('users').doc(currentTodoUser.uid).collection('todos').add({
+                    text: text,
+                    completed: false,
+                    color: randomColor,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            } catch (err) { console.error('Error adding task', err); }
+        };
+
+        window.toggleTodoTask = async function(taskId, isCompleted) {
+            if (!currentTodoUser) return;
+            try {
+                await db_fs.collection('users').doc(currentTodoUser.uid).collection('todos').doc(taskId).update({
+                    completed: isCompleted
+                });
+            } catch (err) { console.error('Error updating task', err); }
+        };
+
+        window.deleteTodoTask = async function(taskId) {
+            if (!currentTodoUser) return;
+            try {
+                await db_fs.collection('users').doc(currentTodoUser.uid).collection('todos').doc(taskId).delete();
+                showToast('Task removed', 'success');
+            } catch (err) { console.error('Error deleting task', err); }
+        };

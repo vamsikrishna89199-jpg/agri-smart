@@ -1,23 +1,47 @@
 const fetch = require('node-fetch');
 
 async function handleMarketAdvisory(req, res) {
-    const { crop, state = "Telangana" } = { ...req.query, ...req.body };
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return res.json({ success: true, data: { situation: "Stable prices expected." } });
+    const { crop, state = "Telangana", location, prices, arrivals, storage } = { ...req.query, ...req.body };
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GROQ_API_KEY; // Fallback to groq key if openrouter is not set
+    
+    // Default fallback if no keys
+    if (!apiKey) return res.json({ success: true, data: { situation: "Stable prices expected.", risk_level: "Low", recommendation: "Hold", reason: "API Key missing, providing default advice.", expected_price_low: 2000, expected_price_high: 2500, action_window_days: 7 } });
 
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                "model": "google/gemini-2.0-flash-lite-preview-02-05:free",
-                "messages": [{ role: "system", content: "Market analyst." }, { role: "user", content: `Crop: ${crop}, State: ${state}` }],
-                "response_format": { "type": "json_object" }
-            })
+        const prompt = `
+        Act as an expert Agricultural Market Analyst in India.
+        Crop: ${crop}
+        Location: ${location || state}
+        Recent Prices: ${prices ? JSON.stringify(prices) : 'Unknown'}
+        Arrivals: ${arrivals || 'Unknown'}
+        Farmer has storage facility: ${storage ? 'Yes' : 'No'}
+
+        Analyze the market trend for this crop in this region. 
+        Provide a Price Prediction and Advisory in JSON format strictly containing these exact keys:
+        - "situation": A brief description of the current market situation.
+        - "risk_level": "Low", "Medium", or "High"
+        - "recommendation": A short, clear action like "Sell Now", "Hold for 1 week", "Staggered Sale".
+        - "reason": Why the farmer should take this action (e.g. "Tomato price will increase next week due to low arrivals -> Hold crop").
+        - "expected_price_low": Number (lower bound of expected price per quintal in INR)
+        - "expected_price_high": Number (upper bound)
+        - "action_window_days": Number of days this advice is valid for
+        `;
+
+        // We use Groq since it's reliable for structured JSON
+        const Groq = require('groq-sdk');
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: 'system', content: 'You are a Market Analyst. Output valid JSON only.' }, { role: 'user', content: prompt }],
+            model: 'llama-3.3-70b-versatile',
+            response_format: { type: 'json_object' },
+            temperature: 0.2
         });
-        const result = await response.json();
-        res.json({ success: true, data: JSON.parse(result.choices[0].message.content) });
+
+        const resultData = JSON.parse(completion.choices[0].message.content);
+        res.json({ success: true, data: resultData });
     } catch (err) {
+        console.error("[Market] Advisory Error:", err.message);
         res.json({ success: false, message: err.message });
     }
 }
