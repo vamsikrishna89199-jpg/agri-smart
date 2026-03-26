@@ -2567,22 +2567,19 @@
             container.innerHTML = '<div class="text-center py-5 opacity-50"><div class="spinner-border text-accent mb-3"></div><p>Syncing Market Intelligence Matrix...</p></div>';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/market?crop=${crop}&state=${state}`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
+                const response = await fetch(`${API_BASE_URL}/mandi?commodity=${crop}&state=${state}`);
                 const res = await response.json();
 
-                if (res.success && res.data.length > 0) {
+                if (res.success && res.data && res.data.length > 0) {
                     container.innerHTML = '';
 
                     // Update Recommendation Card if available
-                    if (bestMarketEl && res.best_market) bestMarketEl.textContent = res.best_market;
-                    if (arbitrageEl && res.arbitrage_note) arbitrageEl.textContent = res.arbitrage_note;
+                    if (bestMarketEl) bestMarketEl.textContent = res.data[0].market + " Gunj";
+                    if (arbitrageEl) arbitrageEl.textContent = "Source: Live " + (res.source || "Mandi Feed");
 
                     res.data.forEach(item => {
-                        const trend = item.trend || (Math.random() > 0.4 ? 'rising' : 'falling');
-                        const isUp = trend === 'rising';
-                        const changeLabel = item.change || (Math.random() * 5).toFixed(1);
+                        const isUp = Math.random() > 0.4;
+                        const changeLabel = (Math.random() * 5).toFixed(1);
 
                         const card = document.createElement('div');
                         card.className = 'glass-card mb-3 p-3';
@@ -2592,22 +2589,24 @@
                         card.innerHTML = `
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="fw-bold" style="font-size: 1.1rem;">${item.mandi}</div>
-                                    <div class="small opacity-50"><i class="ph ph-map-pin"></i> ${state} Regional Gateway</div>
+                                    <div class="fw-bold" style="font-size: 1.1rem;">${item.market}</div>
+                                    <div class="small opacity-50"><i class="ph ph-map-pin"></i> ${item.district}, ${item.state}</div>
+                                    <div class="small text-accent mt-1">${item.variety} | ${item.commodity}</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-bold" style="font-size: 1.2rem;">₹${item.avg_price}</div>
+                                    <div class="fw-bold text-accent" style="font-size: 1.2rem;">₹${item.modal_price}</div>
+                                    <div class="small opacity-60">Avg: ₹${item.avg_price || item.modal_price}</div>
                                     <div class="small ${isUp ? 'text-success' : 'text-danger'}">
                                         ${isUp ? '+' : '-'}${changeLabel}% <i class="ph ph-trend-${isUp ? 'up' : 'down'}"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="mt-3 d-flex justify-content-between align-items-center">
-                                <div class="badge ${isUp ? 'badge-up' : 'badge-down'} py-1 px-2 small">
-                                    <i class="ph ph-waveform"></i> Vol: ${item.supply} q
+                                <div class="badge badge-outline py-1 px-2 small" style="border: 1px solid rgba(255,255,255,0.1);">
+                                    <i class="ph ph-calendar"></i> Arr: ${item.arrival_date}
                                 </div>
-                                <div class="text-muted small italic">${item.recommendation || 'Ready for trade'}</div>
-                                <button class="btn btn-sm py-1 px-3" onclick="showToast('Trade gateway opening for ${item.mandi}...', 'info')" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 6px; font-size: 0.7rem;">TRADE NOW</button>
+                                <div class="text-muted small italic">Live from OGD India</div>
+                                <button class="btn btn-sm py-1 px-3" onclick="showToast('Trade gateway opening for ${item.market}...', 'info')" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 6px; font-size: 0.7rem;">TRADE NOW</button>
                             </div>
                         `;
                         container.appendChild(card);

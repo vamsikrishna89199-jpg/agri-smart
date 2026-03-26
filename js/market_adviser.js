@@ -50,8 +50,8 @@ async function callAiAdviser() {
                 if (priceResponse.ok) {
                     const priceData = await priceResponse.json();
                     if (priceData.success && priceData.data) {
-                        // Extract prices from real data
-                        const realPrices = Object.values(priceData.data).map(item => item.close || item.price || 2200);
+                        // Data.gov.in returns records array, each with modal_price
+                        const realPrices = priceData.data.map(item => parseFloat(item.modal_price) || 2200);
                         if (realPrices.length > 0) {
                             prices = realPrices;
                             // Update Cache
@@ -59,7 +59,7 @@ async function callAiAdviser() {
                                 timestamp: now,
                                 prices: prices
                             }));
-                            console.log("Fetched and cached real mandi prices:", prices);
+                            console.log("Fetched and cached real mandi prices from OGD:", prices);
                         }
                     }
                 }

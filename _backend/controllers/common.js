@@ -2,23 +2,45 @@ const { queryDB, runDB } = require('../database');
 const fetch = require('node-fetch');
 
 async function handleGetMandiPrices(req, res) {
-    const symbols = req.query.symbols || "ZW.COMM,ZC.COMM,SB.COMM,ZR.COMM";
-    const API_KEY = "697e40e9066e43.23366476";
+    const apiKey = process.env.DATAGOV_API_KEY;
+    const resourceId = process.env.DATAGOV_RESOURCE_ID;
+    
+    if (!apiKey || !resourceId) {
+        return res.json({ success: false, message: "Mandi API credentials missing." });
+    }
+
+    // Default params for hackathon: limit 50, fetch latest
+    const { limit = 50, offset = 0, state, commodity } = { ...req.query, ...req.body };
+    
+    let url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&limit=${limit}&offset=${offset}`;
+    
+    // Add filters if provided (State, Commodity)
+    if (state) url += `&filters[state]=${encodeURIComponent(state)}`;
+    if (commodity) url += `&filters[commodity]=${encodeURIComponent(commodity)}`;
+
     try {
-        const symbolList = symbols.split(',');
-        const fetchPromises = symbolList.map(async (symbol) => {
-            try {
-                const response = await fetch(`https://eodhd.com/api/real-time/${symbol}?api_token=${API_KEY}&fmt=json`);
-                if (response.ok) return { symbol, data: await response.json() };
-            } catch (e) {}
-            return { symbol, data: null };
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!data || !data.records) {
+            throw new Error("No records found from Mandi API");
+        }
+
+        res.json({ 
+            success: true, 
+            data: data.records, 
+            total: data.total,
+            source: "Data.gov.in (OGD Platform)",
+            updated_at: new Date().toISOString()
         });
-        const responses = await Promise.all(fetchPromises);
-        const results = {};
-        responses.forEach(r => { if (r.data) results[r.symbol] = r.data; });
-        res.json({ success: true, data: results });
     } catch (err) {
-        res.json({ success: true, data: {}, note: "Mandi prices unavailable" });
+        console.error("[Mandi API] Fetch Error:", err.message);
+        res.json({ 
+            success: false, 
+            message: "Mandi prices temporarily unavailable",
+            error: err.message,
+            fallback_data: true 
+        });
     }
 }
 
