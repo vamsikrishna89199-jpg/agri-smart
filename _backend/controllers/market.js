@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 async function handleMarketAdvisory(req, res) {
-    const { crop, state = "Telangana" } = req.body;
+    const { crop, state = "Telangana" } = { ...req.query, ...req.body };
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return res.json({ success: true, data: { situation: "Stable prices expected." } });
 

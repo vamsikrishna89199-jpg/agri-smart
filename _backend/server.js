@@ -42,6 +42,7 @@ app.use((req, res, next) => {
 app.get('/api/mandi', common.handleGetMandiPrices);
 app.get('/api/schemes', common.handleGetSchemes);
 app.get('/api/weather', weather.handleGetWeather);
+app.get('/api/market', market.handleMarketAdvisory);
 app.post('/api/ai/disease', ai.handleDiseaseDetection);
 app.post('/api/ai/voice', ai.handleVoiceAssistant);
 app.post('/api/ai/crop-advisor', ai.handleConversationalCrop);
@@ -52,30 +53,50 @@ app.get('/api/manage/dashboard', manage.handleGetDashboard);
 // Legacy single entry point compatibility
 app.all('/api/ai', async (req, res) => {
     const action = req.query.action || req.body.action;
-    switch(action) {
-        case 'get_mandi_prices': return common.handleGetMandiPrices(req, res);
-        case 'get_schemes': return common.handleGetSchemes(req, res);
-        case 'disease_detect': return ai.handleDiseaseDetection(req, res);
-        case 'voice_assistant': return ai.handleVoiceAssistant(req, res);
-        case 'conversational_crop':
-        case 'crop_recommendation': return ai.handleConversationalCrop(req, res);
-        case 'market_advisory': return market.handleMarketAdvisory(req, res);
-        case 'soil_health': return ai.handleSoilHealth(req, res);
-        default: res.status(400).json({ success: false, message: `Unknown AI action: ${action}` });
+    console.log(`[SERVER] Incoming /api/ai action: ${action}`);
+    try {
+        switch(action) {
+            case 'get_mandi_prices': return common.handleGetMandiPrices(req, res);
+            case 'get_schemes': return common.handleGetSchemes(req, res);
+            case 'disease_detect': return ai.handleDiseaseDetection(req, res);
+            case 'voice_assistant': return ai.handleVoiceAssistant(req, res);
+            case 'conversational_crop':
+            case 'crop_recommendation': return ai.handleConversationalCrop(req, res);
+            case 'market_advisory': return market.handleMarketAdvisory(req, res);
+            case 'soil_health': return ai.handleSoilHealth(req, res);
+            default: 
+                console.warn(`[SERVER] Unknown AI action: ${action}`);
+                res.status(400).json({ success: false, message: `Unknown AI action: ${action}` });
+        }
+    } catch (err) {
+        console.error(`[SERVER] AI Route Error:`, err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
 app.all('/api/manage', async (req, res) => {
     const action = req.query.action || req.body.action;
-    switch(action) {
-        case 'dashboard': return manage.handleGetDashboard(req, res);
-        case 'pump_control': return manage.handlePumpControl(req, res);
-        case 'seed_check': return manage.handleSeedCheck(req, res);
-        case 'admin_users': return manage.handleAdminUsers(req, res);
-        case 'delete_user': return manage.handleDeleteUser(req, res);
-        case 'call_log': return manage.handleCallLog(req, res);
-        default: res.status(400).json({ success: false, message: `Unknown Manage action: ${action}` });
+    console.log(`[SERVER] Incoming /api/manage action: ${action}`);
+    try {
+        switch(action) {
+            case 'dashboard': return manage.handleGetDashboard(req, res);
+            case 'pump_control': return manage.handlePumpControl(req, res);
+            case 'seed_check': return manage.handleSeedCheck(req, res);
+            case 'admin_users': return manage.handleAdminUsers(req, res);
+            case 'delete_user': return manage.handleDeleteUser(req, res);
+            case 'call_log': return manage.handleCallLog(req, res);
+            default: res.status(400).json({ success: false, message: `Unknown Manage action: ${action}` });
+        }
+    } catch (err) {
+        console.error(`[SERVER] Manage Route Error:`, err);
+        res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error("[SERVER] Uncaught Error:", err);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
 });
 
 const PORT = process.env.PORT || 3000;

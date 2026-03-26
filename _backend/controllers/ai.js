@@ -2,6 +2,9 @@ const Groq = require('groq-sdk');
 const googleTTS = require('google-tts-api');
 const { queryDB, runDB } = require('../database');
 const fetch = require('node-fetch');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
 
 let groqInstance = null;
 let cachedKey = null;
@@ -57,57 +60,97 @@ async function handleConversationalCrop(req, res) {
 }
 
 async function handleDiseaseDetection(req, res) {
+    console.log("[AI] Starting Disease Detection...");
     let imageUrl = req.body.imageUrl;
     let imageBytes = req.body.file || req.body.imageBytes;
     let imageType = req.body.fileType || req.body.imageType;
 
     if (imageBytes && Buffer.isBuffer(imageBytes)) {
+        console.log(`[AI] Image received as Buffer (${imageBytes.length} bytes), Type: ${imageType}`);
         imageUrl = `data:${imageType || 'image/jpeg'};base64,${imageBytes.toString('base64')}`;
     }
 
     if (!imageUrl) {
+        console.error("[AI] Error: No imageUrl or imageBytes found in request body");
         return res.status(400).json({ success: false, error: 'No image provided. Please upload a crop image.' });
     }
 
     const visionKey = process.env.GROQ_VISION_API_KEY || process.env.GROQ_API_KEY;
     if (!visionKey) {
-        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY in the backend .env file.' });
+        return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
     }
     const groq = new Groq({ apiKey: visionKey });
 
     try {
+        console.log("[AI] Calling Groq Vision Model (Llama 4 Scout)...");
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: 'user', 
                 content: [
-                    { type: 'text', text: 'Analyze this crop image and identify the disease. Return the result in a JSON object with fields: "disease_name", "confidence", "symptoms" (array), "organic_remedies" (array), "treatment_plan" (array), and "chemical_treatment" (string).' }, 
+                    { type: 'text', text: 'Identify the plant disease in this image. Return ONLY a valid JSON object: {"disease_name": string, "confidence": number, "symptoms": [string], "organic_remedies": [string], "treatment_plan": [string], "chemical_treatment": string}' }, 
                     { type: 'image_url', image_url: { url: imageUrl } }
                 ] 
             }],
-            model: 'llama-3.2-11b-vision-preview',
-            temperature: 0.1,
-            response_format: { type: 'json_object' }
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            temperature: 0.1
         });
-        let content = completion.choices[0].message.content;
-        if (content.startsWith('```')) content = content.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
-        res.json({ success: true, data: JSON.parse(content) });
+
+        let content = completion.choices[0]?.message?.content || '';
+        console.log("[AI] Groq Raw Content Received:", content.substring(0, 100) + "...");
+
+        // Robust JSON extraction
+        content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        
+        if (!jsonMatch) {
+            console.error("[AI] Error: AI output does not contain a JSON object");
+            throw new Error('AI did not return valid JSON results.');
+        }
+
+        try {
+            const resultData = JSON.parse(jsonMatch[0]);
+            console.log("[AI] Analysis Successful:", resultData.disease_name);
+            res.json({ success: true, data: resultData });
+        } catch (parseErr) {
+            console.error("[AI] JSON Parse Error:", parseErr.message, "Content:", jsonMatch[0]);
+            throw new Error('Failed to parse AI medical report.');
+        }
     } catch (err) {
+        console.error("[AI] Groq Vision Error:", err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 }
 
 async function handleVoiceAssistant(req, res) {
-    let { query, audioBytes } = req.body;
-
-    if (!query) {
-        return res.status(400).json({ success: false, error: 'No query provided' });
-    }
-
+    let query = req.body.query;
+    const audioBytes = req.body.file || req.body.audioBytes;
+    
     const groq = getGroqClient();
     if (!groq) {
         return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
     }
+
     try {
+        // If query is missing but audio is provided, transcribe first
+        if (!query && audioBytes && Buffer.isBuffer(audioBytes)) {
+            const tempPath = path.join(os.tmpdir(), `voice_cmd_${Date.now()}.webm`);
+            fs.writeFileSync(tempPath, audioBytes);
+            
+            const transcription = await groq.audio.transcriptions.create({
+                file: fs.createReadStream(tempPath),
+                model: 'whisper-large-v3',
+                response_format: 'json',
+                language: req.body.preferred_language || 'en'
+            });
+            
+            query = transcription.text;
+            fs.unlinkSync(tempPath); // Cleanup
+        }
+
+        if (!query) {
+            return res.status(400).json({ success: false, error: 'No query provided' });
+        }
+
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: 'system', 
@@ -119,10 +162,12 @@ async function handleVoiceAssistant(req, res) {
             model: 'llama-3.3-70b-versatile',
             response_format: { type: 'json_object' }
         });
+
         const result = JSON.parse(completion.choices[0].message.content);
         const audioBase64 = await googleTTS.getAudioBase64(result.speech.substring(0, 200), { lang: 'en' });
-        res.json({ success: true, data: { ...result, audio_base64: audioBase64 } });
+        res.json({ success: true, data: { ...result, query, audio_base64: audioBase64 } });
     } catch (err) {
+        console.error("Voice AI Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 }

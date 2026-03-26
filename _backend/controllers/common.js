@@ -1,4 +1,5 @@
 const { queryDB, runDB } = require('../database');
+const fetch = require('node-fetch');
 
 async function handleGetMandiPrices(req, res) {
     const symbols = req.query.symbols || "ZW.COMM,ZC.COMM,SB.COMM,ZR.COMM";
