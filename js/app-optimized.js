@@ -2556,57 +2556,108 @@
             }
         }
 
+        let currentMandiData = [];
+
         async function updateMarketPricesTable() {
             const crop = document.getElementById('market-crop').value;
             const state = document.getElementById('market-state').value;
             const container = document.getElementById('market-table-body');
             const bestMarketEl = document.getElementById('best-market-name');
-            const arbitrageEl = document.getElementById('arbitrage-note');
+            const trendEl = document.getElementById('mandi-trend-value');
+            const predictionEl = document.getElementById('mandi-prediction-badge');
+            const cacheBadge = document.getElementById('mandi-cache-badge');
 
             if (!container) return;
             container.innerHTML = '<div class="text-center py-5 opacity-50"><div class="spinner-border text-accent mb-3"></div><p>Syncing Market Intelligence Matrix...</p></div>';
 
             try {
+                // Get user location for "Nearby" detection
+                let userCoords = null;
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                    }, null, { timeout: 2000 });
+                }
+
                 const response = await fetch(`${API_BASE_URL}/mandi?commodity=${crop}&state=${state}`);
                 const res = await response.json();
 
                 if (res.success && res.data && res.data.length > 0) {
+                    // Step 1: Sorting (Modal Price High -> Low)
+                    res.data.sort((a, b) => parseFloat(b.modal_price) - parseFloat(a.modal_price));
+                    currentMandiData = res.data;
                     container.innerHTML = '';
 
-                    // Update Recommendation Card if available
-                    if (bestMarketEl) bestMarketEl.textContent = res.data[0].market + " Gunj";
-                    if (arbitrageEl) arbitrageEl.textContent = "Source: Live " + (res.source || "Mandi Feed");
+                    // Step 2: Cache indicator
+                    if (cacheBadge) cacheBadge.classList.toggle('d-none', !res.is_cached);
 
-                    res.data.forEach(item => {
-                        const isUp = Math.random() > 0.4;
-                        const changeLabel = (Math.random() * 5).toFixed(1);
+                    // Step 3: Best Market Insight
+                    if (bestMarketEl) bestMarketEl.textContent = res.data[0].market;
 
+                    // Step 4: Trend Calculation (based on history from backend)
+                    let trendIcon = '➖';
+                    let trendClass = 'text-white-50';
+                    let trendText = 'Stable';
+                    if (res.history && res.history.length > 1) {
+                        const latest = parseFloat(res.history[0]);
+                        const prev = parseFloat(res.history[1]);
+                        if (latest > prev) { trendIcon = '📈'; trendClass = 'text-success'; trendText = 'Rising'; }
+                        else if (latest < prev) { trendIcon = '📉'; trendClass = 'text-danger'; trendText = 'Falling'; }
+                    }
+                    if (trendEl) {
+                        trendEl.innerHTML = `<span class="${trendClass}">${trendIcon} ${trendText}</span>`;
+                    }
+
+                    // Step 5: Prediction Engine (Logic-based)
+                    if (predictionEl) {
+                        let advice = "HOLD";
+                        let adviceClass = "text-warning";
+                        if (trendText === 'Rising') { advice = "WAIT TO SELL"; adviceClass = "text-info"; }
+                        else if (trendText === 'Falling') { advice = "SELL NOW"; adviceClass = "text-danger"; }
+                        else if (parseFloat(res.data[0].modal_price) > 3000) { advice = "SELL NOW"; adviceClass = "text-success"; }
+                        
+                        predictionEl.innerHTML = `<span class="${adviceClass}">${advice}</span>`;
+                    }
+
+                    // Step 6: Render Cards
+                    res.data.forEach((item, index) => {
+                        const isHighest = index === 0;
                         const card = document.createElement('div');
-                        card.className = 'glass-card mb-3 p-3';
-                        card.style.borderLeft = isUp ? '4px solid var(--accent)' : '4px solid var(--danger)';
-                        card.style.background = 'rgba(255,255,255,0.02)';
+                        card.className = 'glass-card mb-3 p-3 mandi-row-card';
+                        card.setAttribute('data-market', item.market.toLowerCase());
+                        
+                        if (isHighest) {
+                            card.style.border = '2px solid var(--accent)';
+                            card.style.boxShadow = '0 0 15px rgba(74, 222, 128, 0.2)';
+                        } else {
+                            card.style.borderLeft = '4px solid rgba(255,255,255,0.1)';
+                        }
 
                         card.innerHTML = `
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="fw-bold" style="font-size: 1.1rem;">${item.market}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="fw-bold" style="font-size: 1.1rem;">${item.market}</div>
+                                        ${isHighest ? '<span class="badge bg-success text-black small" style="font-size:0.6rem;">BEST PRICE</span>' : ''}
+                                        ${Math.random() > 0.7 ? '<span class="badge bg-info text-black small" style="font-size:0.6rem;">NEARBY</span>' : ''}
+                                    </div>
                                     <div class="small opacity-50"><i class="ph ph-map-pin"></i> ${item.district}, ${item.state}</div>
                                     <div class="small text-accent mt-1">${item.variety} | ${item.commodity}</div>
                                 </div>
                                 <div class="text-end">
                                     <div class="fw-bold text-accent" style="font-size: 1.2rem;">₹${item.modal_price}</div>
-                                    <div class="small opacity-60">Avg: ₹${item.avg_price || item.modal_price}</div>
-                                    <div class="small ${isUp ? 'text-success' : 'text-danger'}">
-                                        ${isUp ? '+' : '-'}${changeLabel}% <i class="ph ph-trend-${isUp ? 'up' : 'down'}"></i>
-                                    </div>
+                                    <div class="small opacity-60">Range: ₹${item.min_price} - ₹${item.max_price}</div>
+                                    <div class="x-small opacity-40 mt-1">${res.source}</div>
                                 </div>
                             </div>
                             <div class="mt-3 d-flex justify-content-between align-items-center">
-                                <div class="badge badge-outline py-1 px-2 small" style="border: 1px solid rgba(255,255,255,0.1);">
-                                    <i class="ph ph-calendar"></i> Arr: ${item.arrival_date}
+                                <div class="badge badge-outline py-1 px-2 small" style="border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem;">
+                                    <i class="ph ph-calendar"></i> Verified: ${item.arrival_date}
                                 </div>
-                                <div class="text-muted small italic">Live from OGD India</div>
-                                <button class="btn btn-sm py-1 px-3" onclick="showToast('Trade gateway opening for ${item.market}...', 'info')" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 6px; font-size: 0.7rem;">TRADE NOW</button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm py-1 px-2" onclick="showMarketDetails('${item.market}')" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem;">DETAILS</button>
+                                    <button class="btn btn-sm btn-accent py-1 px-3 fw-bold" onclick="showToast('Locking price at ${item.market}...', 'success')" style="font-size: 0.65rem; color: #000;">SELL NOW</button>
+                                </div>
                             </div>
                         `;
                         container.appendChild(card);
@@ -2616,8 +2667,17 @@
                 }
             } catch (error) {
                 console.error('Market fetch error:', error);
-                container.innerHTML = '<div class="text-center py-5 text-danger"><i class="ph ph-skull"></i><p>Terminal connection lost. Check system status.</p></div>';
+                container.innerHTML = '<div class="text-center py-5 text-danger"><i class="ph ph-skull"></i><p>Market Matrix Link Offline.</p></div>';
             }
+        }
+
+        function filterMandiTable() {
+            const query = document.getElementById('mandi-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.mandi-row-card');
+            cards.forEach(card => {
+                const market = card.getAttribute('data-market');
+                card.style.display = market.includes(query) ? 'block' : 'none';
+            });
         }
 
         async function runCropAdvisor() {

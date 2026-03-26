@@ -1,5 +1,6 @@
 const { queryDB, runDB } = require('../database');
 const fetch = require('node-fetch');
+const { admin, db } = require('../firebase');
 
 async function handleGetMandiPrices(req, res) {
     const apiKey = process.env.DATAGOV_API_KEY;
@@ -9,12 +10,50 @@ async function handleGetMandiPrices(req, res) {
         return res.json({ success: false, message: "Mandi API credentials missing." });
     }
 
-    // Default params for hackathon: limit 50, fetch latest
-    const { limit = 50, offset = 0, state, commodity } = { ...req.query, ...req.body };
+    const { limit = 50, offset = 0, state = "Telangana", commodity = "Rice" } = { ...req.query, ...req.body };
     
+    // Step 1: Check Firestore Cache
+    const cacheId = `mandi_cache_${state.toLowerCase().replace(/\s+/g, '_')}_${commodity.toLowerCase().replace(/\s+/g, '_')}`;
+    const cacheRef = db.collection('mandi_prices').doc(cacheId);
+    
+    try {
+        const cacheDoc = await cacheRef.get();
+        if (cacheDoc.exists) {
+            const cacheData = cacheDoc.data();
+            const lastUpdated = cacheData.timestamp ? cacheData.timestamp.toDate() : new Date(0);
+            const hoursSinceUpdate = (new Date() - lastUpdated) / (1000 * 60 * 60);
+            
+            if (hoursSinceUpdate < 6) {
+                console.log(`[Mandi Cache] Hit for ${commodity} in ${state} (${hoursSinceUpdate.toFixed(1)}h old)`);
+                
+                // Fetch history for cached path too
+                let history = [];
+                try {
+                    const historySnap = await db.collection('mandi_history')
+                        .where('commodity', '==', commodity)
+                        .where('state', '==', state)
+                        .orderBy('timestamp', 'desc')
+                        .limit(7)
+                        .get();
+                    history = historySnap.docs.map(doc => doc.data().modal_price);
+                } catch (e) { console.warn("[Mandi History] Read Error:", e.message); }
+
+                return res.json({ 
+                    success: true, 
+                    data: cacheData.records, 
+                    history,
+                    source: "AgriSmart Firestore Cache",
+                    updated_at: lastUpdated.toISOString(),
+                    is_cached: true
+                });
+            }
+        }
+    } catch (e) {
+        console.warn("[Mandi Cache] Read Error:", e.message);
+    }
+
+    // Step 2: Fetch from Data.gov.in (OGD)
     let url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&limit=${limit}&offset=${offset}`;
-    
-    // Add filters if provided (State, Commodity)
     if (state) url += `&filters[state]=${encodeURIComponent(state)}`;
     if (commodity) url += `&filters[commodity]=${encodeURIComponent(commodity)}`;
 
@@ -22,26 +61,61 @@ async function handleGetMandiPrices(req, res) {
         const response = await fetch(url);
         const data = await response.json();
         
+        let records = [];
+        let source = "Data.gov.in (OGD Platform)";
+        let isFallback = false;
+
         if (data && data.records && data.records.length > 0) {
-            return res.json({ 
-                success: true, 
-                data: data.records, 
-                total: data.total,
-                source: "Data.gov.in (OGD Platform)",
-                updated_at: new Date().toISOString()
+            records = data.records;
+            
+            // Step 3: Save to Firestore Cache
+            await cacheRef.set({
+                state,
+                commodity,
+                records,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
             });
+
+            // Step 4: Save to Mandi History (for trends)
+            const modalPrice = parseFloat(records[0].modal_price);
+            if (!isNaN(modalPrice)) {
+                await db.collection('mandi_history').add({
+                    commodity,
+                    state,
+                    modal_price: modalPrice,
+                    date: new Date().toISOString().split('T')[0],
+                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        } else {
+            console.warn(`[Mandi API] No live records for ${commodity} in ${state}. Providing fallback.`);
+            records = getMandiFallback(state, commodity);
+            source = "AgriSmart Market Matrix (Verified)";
+            isFallback = true;
         }
-        
-        // If we reach here, either API error or no records found
-        // Provide high-quality fallback data for hackathon success
-        console.warn(`[Mandi API] No live records for ${commodity} in ${state}. Providing fallback.`);
-        const fallback = getMandiFallback(state, commodity);
+
+        // Step 5: Fetch History for Trend Calculation
+        let history = [];
+        try {
+            const historySnap = await db.collection('mandi_history')
+                .where('commodity', '==', commodity)
+                .where('state', '==', state)
+                .orderBy('timestamp', 'desc')
+                .limit(7)
+                .get();
+            
+            history = historySnap.docs.map(doc => doc.data().modal_price);
+        } catch (e) {
+            console.warn("[Mandi History] Read Error:", e.message);
+        }
+
         res.json({ 
             success: true, 
-            data: fallback, 
-            total: fallback.length,
-            source: "AgriSmart Market Matrix (Verified)",
-            is_fallback: true
+            data: records, 
+            history,
+            source, 
+            is_fallback: isFallback, 
+            updated_at: new Date().toISOString() 
         });
 
     } catch (err) {

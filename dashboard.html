@@ -796,12 +796,29 @@
                                 </select>
                             </div>
                             <div class="mandi-stat-summary mt-auto">
-                                <div class="glass-card mb-0 p-3 text-center"
+                                <div class="glass-card mb-0 p-3"
                                     style="background: rgba(74, 222, 128, 0.05); border: 1px solid rgba(74, 222, 128, 0.2);">
-                                    <div class="text-muted small">BEST MARKET RECOMMENDATION</div>
-                                    <div class="fw-bold text-success" id="best-market-name" style="font-size: 1.1rem;">
-                                        Nizamabad Gunj</div>
-                                    <div class="small opacity-60" id="arbitrage-note">Arbitrage Opportunity: +₹120/q
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-muted small fw-bold">MARKET INSIGHTS</span>
+                                        <span id="mandi-cache-badge" class="badge bg-dark border border-white-10 d-none">CACHED</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-2 border border-white-10 rounded">
+                                                <small class="d-block opacity-50">Best Market</small>
+                                                <div class="fw-bold text-accent text-truncate" id="best-market-name">Detecting...</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 border border-white-10 rounded">
+                                                <small class="d-block opacity-50">Trend</small>
+                                                <div class="fw-bold" id="mandi-trend-value">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 p-2 bg-dark rounded border border-white-10 text-center">
+                                        <small class="d-block opacity-60" style="font-size: 0.7rem;">AI RECOMMENDATION</small>
+                                        <div class="fw-bold" id="mandi-prediction-badge">Calculating Strategy...</div>
                                     </div>
                                 </div>
                             </div>
@@ -813,6 +830,10 @@
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 id="market-title" class="mb-0 fw-bold">Live Price Matrix</h4>
                                 <div class="d-flex gap-2">
+                                    <div class="input-group input-group-sm" style="width: 200px;">
+                                        <span class="input-group-text bg-transparent border-end-0 border-white-10"><i class="ph ph-magnifying-glass opacity-50"></i></span>
+                                        <input type="text" id="mandi-search" class="form-control bg-transparent border-start-0 border-white-10 text-white" placeholder="Filter Mandis..." oninput="filterMandiTable()">
+                                    </div>
                                     <button class="btn btn-sm btn-outline-light px-3"
                                         onclick="updateMarketPricesTable()"><i
                                             class="ph ph-arrows-counter-clockwise"></i> SYNC</button>

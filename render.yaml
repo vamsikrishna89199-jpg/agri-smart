@@ -19,3 +19,7 @@ services:
         fromContext: env
       - key: FIREBASE_SERVICE_ACCOUNT
         fromContext: env
+      - key: DATAGOV_API_KEY
+        fromContext: env
+      - key: DATAGOV_RESOURCE_ID
+        fromContext: env
