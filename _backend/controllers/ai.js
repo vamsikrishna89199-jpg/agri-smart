@@ -122,9 +122,12 @@ async function handleDiseaseDetection(req, res) {
 }
 
 async function handleVoiceAssistant(req, res) {
+    console.log("[AI] Starting Voice Assistant Processing...");
     let query = req.body.query;
     const audioBytes = req.body.file || req.body.audioBytes;
     
+    console.log(`[AI] Input: query="${query}", audio=${audioBytes ? audioBytes.length + ' bytes' : 'none'}`);
+
     const groq = getGroqClient();
     if (!groq) {
         return res.status(503).json({ success: false, error: 'AI service not configured. Set GROQ_API_KEY.' });
@@ -132,7 +135,8 @@ async function handleVoiceAssistant(req, res) {
 
     try {
         // If query is missing but audio is provided, transcribe first
-        if (!query && audioBytes && Buffer.isBuffer(audioBytes)) {
+        if ((!query || query === "undefined" || query === "null") && audioBytes && Buffer.isBuffer(audioBytes)) {
+            console.log("[AI] Transcribing audio with Whisper...");
             const tempPath = path.join(os.tmpdir(), `voice_cmd_${Date.now()}.webm`);
             fs.writeFileSync(tempPath, audioBytes);
             
@@ -144,30 +148,35 @@ async function handleVoiceAssistant(req, res) {
             });
             
             query = transcription.text;
+            console.log("[AI] Whisper Transcribed Text:", query);
             fs.unlinkSync(tempPath); // Cleanup
         }
 
-        if (!query) {
+        if (!query || query.trim().length === 0 || query === "undefined") {
+            console.warn("[AI] Error: Empty or invalid query after processing");
             return res.status(400).json({ success: false, error: 'No query provided' });
         }
 
+        console.log("[AI] Calling Groq LLM with query:", query.substring(0, 50) + "...");
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: 'system', 
                 content: 'You are AgriSmart Brain, an AI agricultural assistant. You help farmers with crop advice, weather info, and farm management. Respond only in JSON with fields: "speech" (natural text), "action" (NAVIGATE, CONTROL_PUMP, START_SCAN, or NONE), and "params" (object).' 
             }, { 
                 role: 'user', 
-                content: query 
+                content: String(query) // Force string 
             }],
             model: 'llama-3.3-70b-versatile',
             response_format: { type: 'json_object' }
         });
 
-        const result = JSON.parse(completion.choices[0].message.content);
+        const content = completion.choices[0].message.content;
+        console.log("[AI] Groq LLM Response:", content.substring(0, 100) + "...");
+        const result = JSON.parse(content);
         const audioBase64 = await googleTTS.getAudioBase64(result.speech.substring(0, 200), { lang: 'en' });
         res.json({ success: true, data: { ...result, query, audio_base64: audioBase64 } });
     } catch (err) {
-        console.error("Voice AI Error:", err);
+        console.error("[AI] Voice Assistant Error:", err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 }
