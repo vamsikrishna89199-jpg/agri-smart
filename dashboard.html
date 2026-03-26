@@ -69,6 +69,9 @@
                 <li class="nav-item" onclick="navigate('farmer_tools')"><i class="ph ph-toolbox"></i> <span
                         data-i18n="nav_tools">Farmer Tools</span>
                 </li>
+                <li class="nav-item" onclick="navigate('schemes')"><i class="ph ph-bank"></i> <span
+                        data-i18n="nav_schemes">Govt Schemes</span>
+                </li>
                 <li class="nav-item" onclick="toggleMoreMenu()"><i class="ph ph-squares-four"></i> <span
                         data-i18n="nav_more">More</span>
                 </li>
@@ -1201,20 +1204,77 @@
                                 </div>
                             </div>
                             <div class="row g-3" id="schemes-grid">
+                                <!-- PM-KISAN -->
                                 <div class="col-md-6">
-                                    <div class="p-3 glass-inner rounded">
-                                        <div class="fw-bold mb-1">PM Fasal Bima Yojana</div>
-                                        <div class="small opacity-50 mb-3">Comprehensive insurance coverage against crop
-                                            failure.</div>
-                                        <button class="btn btn-sm btn-outline-light w-100">Apply Now</button>
+                                    <div class="glass-card h-100 p-3 border-top border-4 d-flex flex-column" style="border-top-color: #10b981 !important; background: rgba(0,0,0,0.3);">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1 text-white">PM-KISAN</h5>
+                                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25" style="font-size: 0.65rem;">Income Support</span>
+                                            </div>
+                                            <div class="bg-black bg-opacity-50 p-1 rounded text-accent fs-5"><i class="ph-fill ph-wallet"></i></div>
+                                        </div>
+                                        <p class="small text-white-50 flex-grow-1" style="font-size:0.8rem;">Assured income support of ₹6000/yr in 3 installments to farmer families via direct bank transfer.</p>
+                                        <a href="https://pmkisan.gov.in/" target="_blank" class="btn btn-sm btn-outline-light w-100 rounded-pill mt-auto">Apply Now <i class="ph ph-arrow-up-right"></i></a>
                                     </div>
                                 </div>
+
+                                <!-- PMFBY -->
                                 <div class="col-md-6">
-                                    <div class="p-3 glass-inner rounded">
-                                        <div class="fw-bold mb-1">Kisan Credit Card (KCC)</div>
-                                        <div class="small opacity-50 mb-3">Instant loans for cultivation and farm
-                                            maintenance.</div>
-                                        <button class="btn btn-sm btn-outline-light w-100">Check Eligibility</button>
+                                    <div class="glass-card h-100 p-3 border-top border-4 d-flex flex-column" style="border-top-color: #3b82f6 !important; background: rgba(0,0,0,0.3);">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1 text-white">PMFBY</h5>
+                                                <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25" style="font-size: 0.65rem;">Crop Insurance</span>
+                                            </div>
+                                            <div class="bg-black bg-opacity-50 p-1 rounded text-primary fs-5"><i class="ph-fill ph-shield-check"></i></div>
+                                        </div>
+                                        <p class="small text-white-50 flex-grow-1" style="font-size:0.8rem;">Comprehensive insurance coverage against crop failure and post-harvest losses. Max 2% premium.</p>
+                                        <a href="https://pmfby.gov.in/" target="_blank" class="btn btn-sm btn-outline-light w-100 rounded-pill mt-auto">Get Insured <i class="ph ph-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <!-- KCC -->
+                                <div class="col-md-6">
+                                    <div class="glass-card h-100 p-3 border-top border-4 d-flex flex-column" style="border-top-color: #f59e0b !important; background: rgba(0,0,0,0.3);">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1 text-white">KCC Scheme</h5>
+                                                <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25" style="font-size: 0.65rem;">Financial Credit</span>
+                                            </div>
+                                            <div class="bg-black bg-opacity-50 p-1 rounded text-warning fs-5"><i class="ph-fill ph-credit-card"></i></div>
+                                        </div>
+                                        <p class="small text-white-50 flex-grow-1" style="font-size:0.8rem;">Timely access to agricultural credit at subsidized interest rates (subventions up to 3%).</p>
+                                        <a href="https://www.myscheme.gov.in/schemes/kcc" target="_blank" class="btn btn-sm btn-outline-light w-100 rounded-pill mt-auto">Learn More <i class="ph ph-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <!-- PKVY -->
+                                <div class="col-md-6">
+                                    <div class="glass-card h-100 p-3 border-top border-4 d-flex flex-column" style="border-top-color: #8b5cf6 !important; background: rgba(0,0,0,0.3);">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h5 class="mb-1 text-white">PKVY</h5>
+                                                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); font-size: 0.65rem;">Organic Farming</span>
+                                            </div>
+                                            <div class="bg-black bg-opacity-50 p-1 rounded fs-5" style="color: #c4b5fd;"><i class="ph-fill ph-plant"></i></div>
+                                        </div>
+                                        <p class="small text-white-50 flex-grow-1" style="font-size:0.8rem;">End-to-end commercial organic farming support. Get up to ₹50,000/ha subsidy over 3 years.</p>
+                                        <a href="https://pgsindia-ncof.gov.in/pkvy/index.aspx" target="_blank" class="btn btn-sm btn-outline-light w-100 rounded-pill mt-auto">Apply Now <i class="ph ph-arrow-up-right"></i></a>
+                                    </div>
+                                </div>
+
+                                <!-- Soil Health Card -->
+                                <div class="col-md-12">
+                                    <div class="glass-card h-100 p-3 border-top border-4 d-flex flex-xl-row flex-column gap-3 align-items-center" style="border-top-color: #ef4444 !important; background: rgba(0,0,0,0.3);">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <h5 class="mb-0 text-white">Soil Health Card</h5>
+                                                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25" style="font-size: 0.65rem;">Soil Testing</span>
+                                            </div>
+                                            <p class="small text-white-50 mb-xl-0" style="font-size:0.8rem;">Free comprehensive soil testing by government labs providing crop-wise fertilizer recommendations based on precise NPK analysis.</p>
+                                        </div>
+                                        <a href="https://soilhealth.dac.gov.in/" target="_blank" class="btn btn-sm btn-outline-light rounded-pill flex-shrink-0" style="min-width: 150px;">Portal Access <i class="ph ph-arrow-up-right"></i></a>
                                     </div>
                                 </div>
                             </div>

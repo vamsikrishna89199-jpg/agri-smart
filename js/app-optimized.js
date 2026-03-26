@@ -6512,3 +6512,47 @@
                 showToast('Task removed', 'success');
             } catch (err) { console.error('Error deleting task', err); }
         };
+
+        // --- Subsidy & Government Schemes ---
+        window.checkEligibility = function() {
+            const state = document.getElementById('elig-state')?.value;
+            const land = parseFloat(document.getElementById('elig-land')?.value);
+            
+            if (!state || isNaN(land)) {
+                return showToast('Please enter your land size to check benefits.', 'warning');
+            }
+            
+            showToast('Analyzing eligibility for ' + state.toUpperCase() + '...', 'info');
+            
+            setTimeout(() => {
+                let recommendations = [];
+                
+                // Purely logical simulation for Hackathon
+                if (land > 0) recommendations.push('PM-KISAN (₹6k/year)');
+                if (land < 5) recommendations.push('SFAC Small Farmer Subsidy');
+                
+                if (state === 'up') recommendations.push('UP Krishi Rin Maafi Yojana');
+                else if (state === 'telangana') recommendations.push('Rythu Bandhu Scheme');
+                else if (state === 'punjab') recommendations.push('Punjab Farm Loan Waiver');
+                
+                recommendations.push('PMFBY Crop Insurance');
+                
+                const message = `You qualify for: ${recommendations.slice(0, 3).join(', ')} and more! 🔥`;
+                showToast(message, 'success', 8000);
+                
+                // Visual feedback in the grid
+                const cardGrid = document.getElementById('schemes-grid');
+                if (cardGrid) {
+                    const cards = cardGrid.querySelectorAll('.glass-card');
+                    cards.forEach(card => {
+                        if (card.innerText.includes('PM-KISAN') || card.innerText.includes('PMFBY')) {
+                            card.classList.add('border-accent');
+                            card.style.boxShadow = '0 0 15px rgba(74, 222, 128, 0.3)';
+                        } else {
+                            card.classList.remove('border-accent');
+                            card.style.boxShadow = 'none';
+                        }
+                    });
+                }
+            }, 1500);
+        };
