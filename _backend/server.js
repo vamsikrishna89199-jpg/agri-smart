@@ -39,6 +39,18 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        time: new Date().toISOString(),
+        env: {
+            node_version: process.version,
+            has_groq_key: !!process.env.GROQ_API_KEY,
+            groq_key_prefix: process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0, 7) + "..." : "missing"
+        }
+    });
+});
+
 app.get('/api/mandi', common.handleGetMandiPrices);
 app.get('/api/schemes', common.handleGetSchemes);
 app.get('/api/weather', weather.handleGetWeather);

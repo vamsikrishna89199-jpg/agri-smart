@@ -29,6 +29,12 @@ async function analyzeDiseaseImage(selectedFile, userNotes = "") {
             body: formData
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Scan API Error Detail:", errorData);
+            throw new Error(errorData.error || errorData.message || "Failed to analyze image");
+        }
+
         const result = await response.json();
 
         if (result.success && result.data) {
