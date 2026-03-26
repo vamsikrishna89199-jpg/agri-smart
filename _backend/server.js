@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const busboy = require('busboy');
+const path = require('path');
 require('dotenv').config();
 const { initDB } = require('./database');
 
@@ -13,6 +14,13 @@ const common = require('./controllers/common');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Serve frontend static files from parent directory
+const FRONTEND_DIR = path.join(__dirname, '..');
+app.use(express.static(FRONTEND_DIR, {
+    index: 'index.html',
+    extensions: ['html']
+}));
 
 // Multipart middleware for images/audio
 app.use((req, res, next) => {
@@ -73,5 +81,7 @@ app.all('/api/manage', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     initDB();
-    console.log(`AgriSmart Server running on port ${PORT}`);
+    console.log(`\n🌱 AgriSmart running at http://localhost:${PORT}`);
+    console.log(`   Frontend: http://localhost:${PORT}`);
+    console.log(`   API:      http://localhost:${PORT}/api\n`);
 });
