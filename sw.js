@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agrismart-cache-v1';
+const CACHE_NAME = 'agrismart-cache-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -19,9 +19,10 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+    self.skipWaiting(); // Force new service worker to take over immediately
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell');
+            console.log('[Service Worker] Caching App Shell v2');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -50,7 +51,12 @@ self.addEventListener('fetch', (event) => {
     // Basic network-first strategy for local API calls, cache-first for static assets
     if (url.pathname.includes('/api/')) {
         event.respondWith(
-            fetch(event.request).catch(() => caches.match(event.request))
+            fetch(event.request).catch(() => {
+                return caches.match(event.request) || new Response(JSON.stringify({ success: false, error: 'Offline' }), { 
+                    status: 503, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+            })
         );
     } else {
         event.respondWith(
@@ -60,7 +66,7 @@ self.addEventListener('fetch', (event) => {
                     if (event.request.mode === 'navigate') {
                         return caches.match('/index.html');
                     }
-                    return null;
+                    return new Response('Internet Disconnected', { status: 408 });
                 });
             })
         );
