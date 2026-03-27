@@ -714,7 +714,7 @@
         // === VOICE COMMAND PROCESSING (CONSOLIDATED AT LINE 8015) ===
         // Redundant definition removed to prevent conflicts.
 
-        window.playVoiceAudio = function playVoiceAudio(text, base64 = null) {
+        window.legacy_playVoiceAudio = function playVoiceAudio(text, base64 = null) {
             try {
                 const voiceMode = document.getElementById('ai-voice-selection')?.value || 'server';
 
@@ -3898,7 +3898,7 @@
                 showToast("Voice assistant connection failed", "error");
             }
         }
-        window.processVoiceCommand = processVoiceCommand;
+        window.legacy_processVoiceCommand = processVoiceCommand;
 
         function formatTime(isoString) {
             if (!isoString) return 'Just now';
