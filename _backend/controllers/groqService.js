@@ -54,6 +54,14 @@ async function handleVoice(req, res) {
     const audioBuffer = req.body.file;
     const jsonText = req.body.text;
     const lang = (req.body.lang || req.body.language || 'en').toLowerCase().substring(0, 2);
+    console.log(`[Voice API] Incoming request - Lang: ${lang}, Audio: ${!!audioBuffer}, Text: ${!!jsonText}`);
+
+    const fallbacks = {
+        en: 'Sorry, I could not hear that clearly. Please speak again.',
+        te: 'క్షమించండి, మీరు చెప్పింది నాకు స్పష్టంగా వినిపించలేదు. దయచేసి మళ్ళీ చెప్పండి.',
+        hi: 'क्षमा करें, मुझे वह स्पष्ट रूप से सुनाई नहीं दिया। कृपया फिर से बोलें।',
+        ta: 'மன்னிக்கவும், நீங்கள் சொன்னது எனக்கு தெளிவாக கேட்கவில்லை. தயவுசெய்து மீண்டும் சொல்லுங்கள்.'
+    };
 
     try {
         if (audioBuffer && Buffer.isBuffer(audioBuffer) && audioBuffer.length > 100) {
@@ -61,31 +69,36 @@ async function handleVoice(req, res) {
             fs.writeFileSync(tempPath, audioBuffer);
 
             try {
+                // Add language-specific keywords to help Whisper
+                let whisperPrompt = "AgriSmart, farming in India, crops, soil, acres, ₹, Mandi.";
+                if (lang === 'te') whisperPrompt += " రైతు, వ్యవసాయం, పంటలు, భూమి, వాతావరణం, ధరలు, విత్తనాలు.";
+                else if (lang === 'hi') whisperPrompt += " किसान, खेती, फसलें, जमीन, मौसम, दाम, बीज.";
+                else if (lang === 'ta') whisperPrompt += " விவசாயி, விவசாயம், பயிர்கள், நிலம், வானிலை, விலைகள், விதைகள்.";
+
                 const transcription = await groq.audio.transcriptions.create({
                     file: fs.createReadStream(tempPath),
                     model: 'whisper-large-v3',
                     response_format: 'json',
                     language: lang,
-                    prompt: "AgriSmart, farming in India, crops, soil, acres, hectares, red soil, black soil, pests, pesticides, schemes, ₹, market prices, mandi, Kisan."
+                    prompt: whisperPrompt
                 });
                 text = (transcription.text || '').trim();
             } finally {
                 if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
             }
-            console.log('[Voice API] Whisper transcript:', text);
+            console.log(`[Voice API] Whisper (${lang}) transcript:`, text);
 
             if (!text || text.length < 2) {
                 return res.json({
                     success: true,
                     transcript: '',
-                    speech: 'Sorry, I could not hear that clearly. Please speak again.',
+                    speech: fallbacks[lang] || fallbacks.en,
                     intent: 'chat',
                     action: 'NONE',
                     params: {}
                 });
             }
         } else if (jsonText) {
-            // ── Step 1b: Plain text input (typed query) ──────────────────────
             text = String(jsonText).trim();
             console.log('[Voice API] Text query received:', text);
         } else {
@@ -94,10 +107,16 @@ async function handleVoice(req, res) {
 
         // ── Step 2: Build language-injected system prompt ─────────────────────
         const langNames = { en: 'English', te: 'Telugu', hi: 'Hindi', ta: 'Tamil' };
+        const langScripts = { en: 'Latin', te: 'Telugu', hi: 'Devanagari', ta: 'Tamil' };
         const langName = langNames[lang] || 'English';
+        const langScript = langScripts[lang] || 'Latin';
+
         const langInstruction = lang === 'en'
             ? 'Always respond in English.'
-            : `CRITICAL: You MUST respond ENTIRELY in ${langName} language. Every word of the "speech" field must be in ${langName} script. Do NOT mix with English except for numbers and proper nouns.`;
+            : `CRITICAL: You MUST respond ENTIRELY in ${langName} language using ${langScript} script. 
+               - The "speech" field MUST be in ${langName} script only. 
+               - Example for ${langName}: (respond naturally as if speaking to a farmer in their native tongue). 
+               - Do NOT use English letters in the "speech" field except for units like kg or ₹.`;
 
         const fullPrompt = SYSTEM_PROMPT + '\n\n' + langInstruction;
 
