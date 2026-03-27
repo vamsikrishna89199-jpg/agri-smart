@@ -60,7 +60,8 @@ app.get('/api/weather', weather.handleGetWeather);
 app.get('/api/market', market.handleMarketAdvisory);
 app.post('/api/ai/disease', ai.handleDiseaseDetection);
 app.post('/api/ai/voice', ai.handleVoiceAssistant);
-app.post('/api/groq-intent', groqService.handleIntent);
+app.post('/api/voice', groqService.handleVoice);         // Unified voice pipeline (Whisper → LLM → TTS)
+app.post('/api/groq-intent', groqService.handleVoice);   // Legacy alias
 app.post('/api/ai/price-predict', predictions.handlePricePrediction);
 app.post('/api/ai/profit-calc', predictions.handleProfitCalculation);
 app.post('/api/ai/crop-advisor', ai.handleConversationalCrop);
