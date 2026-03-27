@@ -3212,13 +3212,13 @@
         <div class="pulse-ring"></div>
     </div>
 
-    <div id="ai-feedback-overlay" class="ai-hologram-overlay d-none">
+    <div id="ai-hologram-modal" class="ai-hologram-overlay d-none">
         <div class="ai-hologram-content">
             <div class="whisper-badge mb-3">
                 <i class="ph ph-waveform"></i> Powered by <span>Groq Whisper Large v3</span>
             </div>
             <div class="ai-visualizer-container">
-                <div id="ai-visualizer" class="ai-bars d-none">
+                <div id="ai-hologram-visualizer" class="ai-bars d-none">
                     <div class="bar"></div>
                     <div class="bar"></div>
                     <div class="bar"></div>
@@ -3230,14 +3230,14 @@
                 </div>
             </div>
             <div class="ai-text-container">
-                <div id="ai-transcript" class="ai-transcript-text">"Listening..."</div>
-                <div id="ai-response-text" class="ai-response-text">How can I help you today?</div>
+                <div id="ai-hologram-transcript" class="ai-transcript-text">"Listening..."</div>
+                <div id="ai-hologram-response" class="ai-response-text">How can I help you today?</div>
             </div>
 
             <div class="voice-actions mt-4 d-flex flex-column gap-3 align-items-center">
                 <div class="input-group"
                     style="max-width: 320px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);">
-                    <button class="btn btn-link text-white ps-3 pe-2" onclick="toggleVoiceRecording()"
+                    <button class="btn btn-link text-white ps-3 pe-2" onclick="toggleRecording()"
                         title="Speak Command">
                         <i class="ph ph-microphone" style="font-size: 1.1rem; color: var(--accent);"></i>
                     </button>

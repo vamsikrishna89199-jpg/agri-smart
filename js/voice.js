@@ -12,16 +12,24 @@
     function setStatus(msg) {
         const el = document.getElementById('voice-live-transcript');
         if (el) el.innerText = msg;
+        const holoEl = document.getElementById('ai-hologram-transcript');
+        if (holoEl) holoEl.innerText = msg;
     }
 
     function setResponse(msg) {
         const el = document.getElementById('ai-response-text');
         if (el) el.innerText = msg;
+        const holoEl = document.getElementById('ai-hologram-response');
+        if (holoEl) holoEl.innerText = msg;
     }
 
     function setTranscript(msg) {
         const el = document.getElementById('ai-transcript');
-        if (el) el.innerText = msg ? `"${msg}"` : '';
+        const text = msg ? `"${msg}"` : '';
+        if (el) el.innerText = text;
+        const holoEl = document.getElementById('ai-hologram-transcript');
+        if (holoEl) holoEl.innerText = text || 'Listening...';
+        
         const inputBox = document.getElementById('ai-text-input');
         if (inputBox && msg) inputBox.value = msg;
     }
@@ -29,9 +37,26 @@
     function setRecordingUI(active) {
         const btn = document.getElementById('master-ai-btn');
         const bar = document.getElementById('voice-bar');
+        const holo = document.getElementById('ai-hologram-modal');
+        const holoViz = document.getElementById('ai-hologram-visualizer');
+
         if (btn) btn.classList.toggle('listening', active);
         if (bar) bar.classList.toggle('active', active);
+        
+        if (active) {
+            if (holo) holo.classList.remove('d-none');
+            if (holoViz) holoViz.classList.remove('d-none');
+        } else {
+            // Don't hide the hologram immediately, let it show the status of analysis
+            if (holoViz) holoViz.classList.add('d-none');
+        }
     }
+
+    window.closeVoiceOverlay = function() {
+        const holo = document.getElementById('ai-hologram-modal');
+        if (holo) holo.classList.add('d-none');
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
 
     // ─── Recording ────────────────────────────────────────────────────────────
 
@@ -93,8 +118,8 @@
             formData.append('file', audioBlob, 'recording.webm');
             formData.append('lang', lang);  // Tell Whisper which language to transcribe
 
-            setStatus('🧠 Analyzing with Whisper AI...');
-            setResponse('Transcribing your voice...');
+            setStatus('🧠 Analyzing with AI...');
+            setResponse('Transcribing and processing...');
 
             const res = await fetch('/api/voice', { method: 'POST', body: formData });
 
@@ -149,7 +174,7 @@
         // 1. Show what was heard
         if (transcript) {
             setTranscript(transcript);
-            setStatus('Heard: ' + transcript);
+            setStatus('✅ Heard: ' + transcript);
         }
 
         // 2. Show and speak the response
@@ -157,6 +182,19 @@
             setResponse(speech);
             const ttsLang = window.LangManager ? window.LangManager.getTTSLang() : 'en-IN';
             window.speak(speech, ttsLang);
+            
+            // Auto-close overlay after speaking (or 5s if already done)
+            setTimeout(() => {
+                if (!window.speechSynthesis.speaking) {
+                    window.closeVoiceOverlay();
+                } else {
+                    // Check again in 2s
+                    setTimeout(window.closeVoiceOverlay, 5000);
+                }
+            }, 5000);
+        } else {
+            // No speech, close soon
+            setTimeout(window.closeVoiceOverlay, 3000);
         }
 
         // 3. Execute navigation / page action
