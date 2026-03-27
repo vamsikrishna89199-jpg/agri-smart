@@ -10,6 +10,101 @@
         const storage_fb = storage;
         const messaging_fb = (typeof messaging !== 'undefined') ? messaging : null;
 
+        // ==================== SMART ALERT SYSTEM ====================
+        let alerts = [
+            { id: 1, title: 'Welcome to AgriSmart', message: 'Set up your profile to receive personalized crop alerts.', type: 'info', read: false, time: 'Just now' }
+        ];
+
+        window.toggleAlertCenter = function() {
+            const center = document.getElementById('alert-center');
+            if (!center) return;
+            const isVisible = center.style.display === 'block';
+            center.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) renderAlerts();
+        };
+
+        window.renderAlerts = function() {
+            const list = document.getElementById('alert-list');
+            const badge = document.getElementById('notification-badge');
+            if (!list || !badge) return;
+            
+            if (alerts.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center opacity-50 small"><i class="ph ph-notification fs-2 mb-2"></i><p class="mb-0">No new alerts.</p></div>';
+                badge.style.display = 'none';
+                return;
+            }
+
+            const unreadCount = alerts.filter(a => !a.read).length;
+            badge.innerText = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'block' : 'none';
+
+            list.innerHTML = alerts.map(a => `
+                <div class="p-3 border-bottom border-white border-opacity-5 cursor-pointer hover-bg-white-5 alert-item ${a.read ? 'opacity-60' : ''}" onclick="markAlertAsRead(${a.id})">
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 35px; height: 35px; background: ${getAlertBg(a.type)};">
+                            <i class="${getAlertIcon(a.type)} fs-5 text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="fw-bold small" style="font-size: 0.8rem;">${a.title}</span>
+                                <span class="extra-small opacity-50" style="font-size: 0.65rem;">${a.time}</span>
+                            </div>
+                            <p class="extra-small mb-0 opacity-80" style="font-size: 0.72rem; line-height: 1.2;">${a.message}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        function getAlertIcon(type) {
+            if (type === 'warning') return 'ph ph-warning';
+            if (type === 'price') return 'ph ph-trend-down';
+            if (type === 'success') return 'ph ph-check-circle';
+            return 'ph ph-info';
+        }
+
+        function getAlertBg(type) {
+            if (type === 'warning') return 'rgba(239, 68, 68, 0.2)';
+            if (type === 'price') return 'rgba(245, 158, 11, 0.2)';
+            if (type === 'success') return 'rgba(34, 197, 94, 0.2)';
+            return 'rgba(59, 130, 246, 0.2)';
+        }
+
+        window.markAlertAsRead = function(id) {
+            const alert = alerts.find(a => a.id === id);
+            if (alert) {
+                alert.read = true;
+                renderAlerts();
+            }
+        };
+
+        window.markAllAlertsRead = function() {
+            alerts.forEach(a => a.read = true);
+            renderAlerts();
+        };
+
+        window.pushSmartAlert = function(title, message, type = 'info') {
+            const id = Date.now();
+            alerts.unshift({ id, title, message, type, read: false, time: 'Just now' });
+            renderAlerts();
+            showToast(`${title}: ${message}`, type === 'warning' ? 'error' : 'info');
+            
+            try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.volume = 0.2;
+                audio.play().catch(() => {});
+            } catch(e) {}
+        };
+
+        document.addEventListener('click', (e) => {
+            const center = document.getElementById('alert-center');
+            const trigger = document.getElementById('notification-trigger');
+            if (center && trigger && !center.contains(e.target) && !trigger.contains(e.target)) {
+                center.style.display = 'none';
+            }
+        });
+
+        setTimeout(() => renderAlerts(), 1000);
         window.shareToWhatsApp = function(text) {
             const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank');
@@ -6678,101 +6773,6 @@
             } catch (err) { console.error('Error deleting task', err); }
         };
 
-        // ==================== SMART ALERT SYSTEM ====================
-        let alerts = [
-            { id: 1, title: 'Welcome to AgriSmart', message: 'Set up your profile to receive personalized crop alerts.', type: 'info', read: false, time: 'Just now' }
-        ];
-
-        window.toggleAlertCenter = function() {
-            const center = document.getElementById('alert-center');
-            if (!center) return;
-            const isVisible = center.style.display === 'block';
-            center.style.display = isVisible ? 'none' : 'block';
-            if (!isVisible) renderAlerts();
-        };
-
-        window.renderAlerts = function() {
-            const list = document.getElementById('alert-list');
-            const badge = document.getElementById('notification-badge');
-            if (!list || !badge) return;
-            
-            if (alerts.length === 0) {
-                list.innerHTML = '<div class="p-4 text-center opacity-50 small"><i class="ph ph-notification fs-2 mb-2"></i><p class="mb-0">No new alerts.</p></div>';
-                badge.style.display = 'none';
-                return;
-            }
-
-            const unreadCount = alerts.filter(a => !a.read).length;
-            badge.innerText = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'block' : 'none';
-
-            list.innerHTML = alerts.map(a => `
-                <div class="p-3 border-bottom border-white border-opacity-5 cursor-pointer hover-bg-white-5 alert-item ${a.read ? 'opacity-60' : ''}" onclick="markAlertAsRead(${a.id})">
-                    <div class="d-flex gap-3">
-                        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 35px; height: 35px; background: ${getAlertBg(a.type)};">
-                            <i class="${getAlertIcon(a.type)} fs-5 text-white"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <span class="fw-bold small" style="font-size: 0.8rem;">${a.title}</span>
-                                <span class="extra-small opacity-50" style="font-size: 0.65rem;">${a.time}</span>
-                            </div>
-                            <p class="extra-small mb-0 opacity-80" style="font-size: 0.72rem; line-height: 1.2;">${a.message}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        function getAlertIcon(type) {
-            if (type === 'warning') return 'ph ph-warning';
-            if (type === 'price') return 'ph ph-trend-down';
-            if (type === 'success') return 'ph ph-check-circle';
-            return 'ph ph-info';
-        }
-
-        function getAlertBg(type) {
-            if (type === 'warning') return 'rgba(239, 68, 68, 0.2)';
-            if (type === 'price') return 'rgba(245, 158, 11, 0.2)';
-            if (type === 'success') return 'rgba(34, 197, 94, 0.2)';
-            return 'rgba(59, 130, 246, 0.2)';
-        }
-
-        window.markAlertAsRead = function(id) {
-            const alert = alerts.find(a => a.id === id);
-            if (alert) {
-                alert.read = true;
-                renderAlerts();
-            }
-        };
-
-        window.markAllAlertsRead = function() {
-            alerts.forEach(a => a.read = true);
-            renderAlerts();
-        };
-
-        window.pushSmartAlert = function(title, message, type = 'info') {
-            const id = Date.now();
-            alerts.unshift({ id, title, message, type, read: false, time: 'Just now' });
-            renderAlerts();
-            showToast(`${title}: ${message}`, type === 'warning' ? 'error' : 'info');
-            
-            try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.volume = 0.2;
-                audio.play().catch(() => {});
-            } catch(e) {}
-        };
-
-        document.addEventListener('click', (e) => {
-            const center = document.getElementById('alert-center');
-            const trigger = document.getElementById('notification-trigger');
-            if (center && trigger && !center.contains(e.target) && !trigger.contains(e.target)) {
-                center.style.display = 'none';
-            }
-        });
-
-        setTimeout(() => renderAlerts(), 1000);
 
         // --- Profit Intelligence ---
         window.calculateExpectedProfit = async function() {
