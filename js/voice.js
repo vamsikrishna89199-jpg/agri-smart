@@ -88,8 +88,10 @@
 
     window.processVoiceBlob = async function (audioBlob) {
         try {
+            const lang = window.LangManager ? window.LangManager.getWhisperLang() : 'en';
             const formData = new FormData();
             formData.append('file', audioBlob, 'recording.webm');
+            formData.append('lang', lang);  // Tell Whisper which language to transcribe
 
             setStatus('🧠 Analyzing with Whisper AI...');
             setResponse('Transcribing your voice...');
@@ -119,6 +121,7 @@
     window.processTextQuery = async function (text) {
         if (!text || text.trim().length < 2) return;
         text = text.trim();
+        const lang = window.LangManager ? window.LangManager.getWhisperLang() : 'en';
         setTranscript(text);
         setResponse('Thinking...');
 
@@ -126,7 +129,7 @@
             const res = await fetch('/api/voice', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text, lang })  // Pass language to backend
             });
             if (!res.ok) throw new Error(`Server error ${res.status}`);
             const result = await res.json();
@@ -152,7 +155,8 @@
         // 2. Show and speak the response
         if (speech) {
             setResponse(speech);
-            window.speak(speech);
+            const ttsLang = window.LangManager ? window.LangManager.getTTSLang() : 'en-IN';
+            window.speak(speech, ttsLang);
         }
 
         // 3. Execute navigation / page action

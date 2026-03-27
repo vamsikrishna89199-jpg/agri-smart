@@ -83,7 +83,7 @@
                 <div id="userInfo"></div>
                 <button id="logoutBtn" onclick="logout()"
                     style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="ph ph-sign-out"></i> Logout
+                    <i class="ph ph-sign-out"></i> <span data-i18n="logout">Logout</span>
                 </button>
             </div>
         </nav>
@@ -92,11 +92,11 @@
         <div class="mobile-nav">
             <div class="mobile-nav-item active" onclick="navigate('agriSmart')" data-target="agriSmart">
                 <i class="ph ph-house"></i>
-                <span>Dashboard</span>
+                <span data-i18n="nav_home">Dashboard</span>
             </div>
             <div class="mobile-nav-item" onclick="navigate('water')" data-target="water">
                 <i class="ph ph-drop"></i>
-                <span>Water</span>
+                <span data-i18n="irrigation">Water</span>
             </div>
             <div class="mobile-nav-item" onclick="interactMobileVoice()" data-target="voice">
                 <div class="mobile-mic-container" id="mobile-mic-btn">
@@ -105,57 +105,57 @@
             </div>
             <div class="mobile-nav-item" onclick="navigate('scan')" data-target="scan">
                 <i class="ph ph-qr-code"></i>
-                <span>Scan</span>
+                <span data-i18n="nav_disease_scan">Scan</span>
             </div>
             <div class="mobile-nav-item" onclick="toggleMoreMenu()" data-target="more">
                 <i class="ph ph-squares-four"></i>
-                <span>More</span>
+                <span data-i18n="nav_more">More</span>
             </div>
         </div>
 
         <!-- More Menu Overlay -->
         <div class="more-menu" id="moreMenu">
             <div class="more-card" onclick="navigate('connect'); toggleMoreMenu()">
-                <i class="ph ph-chats"></i> <span>Connect</span>
+                <i class="ph ph-chats"></i> <span data-i18n="connect">Connect</span>
             </div>
             <div class="more-card" onclick="navigate('irrigation'); toggleMoreMenu()">
-                <i class="ph ph-drop"></i> <span>Irrigation</span>
+                <i class="ph ph-drop"></i> <span data-i18n="irrigation">Irrigation</span>
             </div>
             <div class="more-card" onclick="navigate('farmer_tools'); toggleMoreMenu()">
-                <i class="ph ph-toolbox"></i> <span>Farmer Tools</span>
+                <i class="ph ph-toolbox"></i> <span data-i18n="nav_tools">Farmer Tools</span>
             </div>
             <div class="more-card" onclick="navigate('marketplace'); toggleMoreMenu()">
-                <i class="ph ph-storefront"></i> <span>Marketplace</span>
+                <i class="ph ph-storefront"></i> <span data-i18n="marketplace">Marketplace</span>
             </div>
             <div class="more-card" onclick="navigate('community'); toggleMoreMenu()">
-                <i class="ph ph-users-three"></i> <span>Community</span>
+                <i class="ph ph-users-three"></i> <span data-i18n="community">Community</span>
             </div>
             <div class="more-card" onclick="navigate('logistics'); toggleMoreMenu()">
-                <i class="ph ph-truck"></i> <span>Logistics</span>
+                <i class="ph ph-truck"></i> <span data-i18n="logistics">Logistics</span>
             </div>
             <div class="more-card" onclick="navigate('weather_page'); toggleMoreMenu()">
-                <i class="ph ph-cloud-sun"></i> <span>Weather</span>
+                <i class="ph ph-cloud-sun"></i> <span data-i18n="weather">Weather</span>
             </div>
             <div class="more-card" onclick="navigate('identity'); toggleMoreMenu()">
-                <i class="ph ph-fingerprint"></i> <span>Identity & Purity</span>
+                <i class="ph ph-fingerprint"></i> <span data-i18n="purity">Identity & Purity</span>
             </div>
             <div class="more-card" onclick="navigate('schemes'); toggleMoreMenu()">
-                <i class="ph ph-bank"></i> <span>Schemes</span>
+                <i class="ph ph-bank"></i> <span data-i18n="nav_schemes">Schemes</span>
             </div>
             <div class="more-card" onclick="navigate('profit_intel'); toggleMoreMenu()">
-                <i class="ph ph-currency-circle-dollar"></i> <span>Profit Planner</span>
+                <i class="ph ph-currency-circle-dollar"></i> <span data-i18n="profit_planner">Profit Planner</span>
             </div>
             <div class="more-card" onclick="navigate('expenses'); toggleMoreMenu()">
-                <i class="ph ph-wallet"></i> <span>Expenses</span>
+                <i class="ph ph-wallet"></i> <span data-i18n="expenses">Expenses</span>
             </div>
             <div class="more-card" onclick="navigate('health'); toggleMoreMenu()">
-                <i class="ph ph-heartbeat"></i> <span>Health Track</span>
+                <i class="ph ph-heartbeat"></i> <span data-i18n="nav_health">Health Track</span>
             </div>
             <div class="more-card" onclick="navigate('profile'); toggleMoreMenu()">
-                <i class="ph ph-user"></i> <span>Profile</span>
+                <i class="ph ph-user"></i> <span data-i18n="profile">Profile</span>
             </div>
             <div class="more-card" id="more-admin" onclick="navigate('admin'); toggleMoreMenu()" style="display: none;">
-                <i class="ph ph-shield-check"></i> <span>Admin</span>
+                <i class="ph ph-shield-check"></i> <span data-i18n="admin_panel">Admin</span>
             </div>
         </div>
 
@@ -170,7 +170,7 @@
                         <div class="online-status"></div>
                     </div>
                     <div class="greeting-text">
-                        <span class="greeting-time" id="greetingTime">Good Morning</span>
+                        <span class="greeting-time" id="greetingTime" data-i18n="good_morning">Good Morning</span>
                         <span class="user-name" id="greetingName">Hello, vamsi</span>
                     </div>
                 </div>
@@ -192,8 +192,8 @@
                         <!-- Alert Center Dropdown -->
                         <div id="alert-center" class="glass-card position-absolute end-0 mt-2 p-0 overflow-hidden shadow-lg animate__animated animate__fadeInDown" style="display: none; width: 320px; z-index: 10000; top: 50px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);">
                             <div class="p-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0 fw-bold"><i class="ph-fill ph-megaphone text-accent"></i> Smart Alerts</h6>
-                                <span class="small opacity-50 cursor-pointer" onclick="markAllAlertsRead()">Clear All</span>
+                                <h6 class="mb-0 fw-bold"><i class="ph-fill ph-megaphone text-accent"></i> <span data-i18n="smart_alerts">Smart Alerts</span></h6>
+                                <span class="small opacity-50 cursor-pointer" onclick="markAllAlertsRead()" data-i18n="clear_all">Clear All</span>
                             </div>
                             <div id="alert-list" style="max-height: 400px; overflow-y: auto;">
                                 <div class="p-4 text-center opacity-50 small">
@@ -207,14 +207,14 @@
                         </div>
                     </div>
 
-                    <!-- Language Selector Dropdown -->
-                    <div class="glass-card"
-                        style="margin: 0; padding: 5px 10px; background: rgba(0,0,0,0.5); border-left: 2px solid var(--accent);">
-                        <select id="global-language-selector" onchange="setGlobalLanguage(this.value)"
-                            style="background: transparent; border: none; color: white; font-weight: bold; cursor: pointer; outline: none; font-size: 0.8rem;">
-                            <option value="en" style="background: #1e293b;">English</option>
-                            <option value="te" style="background: #1e293b;">తెలుగు</option>
-                            <option value="hi" style="background: #1e293b;">हिन्दी</option>
+                    <!-- Language Selector -->
+                    <div class="glass-card" style="margin: 0; padding: 4px 8px; background: rgba(0,0,0,0.5); border-left: 2px solid var(--accent); cursor:pointer;">
+                        <select id="global-language-selector" onchange="LangManager.set(this.value)" title="Select Language"
+                            style="background: transparent; border: none; color: white; font-weight: bold; cursor: pointer; outline: none; font-size: 0.82rem; max-width: 120px;">
+                            <option value="en" style="background: #1e293b;">🇬🇧 English</option>
+                            <option value="te" style="background: #1e293b;">🇮🇳 తెలుగు</option>
+                            <option value="hi" style="background: #1e293b;">🇮🇳 हिन्दी</option>
+                            <option value="ta" style="background: #1e293b;">🇮🇳 தமிழ்</option>
                         </select>
                     </div>
 
@@ -401,7 +401,7 @@
             <section id="crop_advisor" class="page-section">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2><i class="ph ph-plant"></i> Crop Selection AI</h2>
+                        <h2><i class="ph ph-plant"></i> <span data-i18n="crop_advisor">Crop Selection AI</span></h2>
                         <p class="small opacity-70 mb-0">Smart recommendations based on your field conditions</p>
                     </div>
                     <button class="btn btn-sm"
@@ -600,9 +600,9 @@
                             style="position: absolute; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); top: 0; animation: scanAnim 2s infinite linear;">
                         </div>
                         <i class="ph ph-camera" style="font-size: 3rem; opacity: 0.6;"></i>
-                        <div style="position: absolute; bottom: 10px; font-size: 0.8rem;">Point camera at leaf</div>
+                        <div style="position: absolute; bottom: 10px; font-size: 0.8rem;" data-i18n="scan_instruction">Point camera at leaf</div>
                     </div>
-                    <button id="capture-btn" class="scan-btn">Capture & Analyze (Live)</button>
+                    <button id="capture-btn" class="scan-btn" data-i18n="analyze">Capture & Analyze (Live)</button>
                     <div id="scan-result" style="margin-top: 20px; display: none; text-align: center;">
                         <h3 style="color: var(--accent);">Healthy Leaf</h3>
                         <p style="margin-bottom: 15px; color: rgba(255,255,255,0.8);">No signs of Leaf Rust detected
@@ -825,7 +825,7 @@
                     <!-- Sidebar Control -->
                     <div class="col-lg-4">
                         <div class="glass-card h-100" style="padding: 30px; border-top: 4px solid var(--accent);">
-                            <h3 class="fw-bold mb-4" style="letter-spacing: -1px;">Market Intelligence</h3>
+                            <h3 class="fw-bold mb-4" style="letter-spacing: -1px;"><span data-i18n="analytics">Market Intelligence</span></h3>
                             <div class="form-group mb-4">
                                 <label class="small text-muted mb-2 fw-bold text-uppercase"
                                     style="letter-spacing: 1px;">Commodity Sector</label>
@@ -884,7 +884,7 @@
                     <div class="col-lg-8">
                         <div class="glass-card h-100" style="padding: 30px;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h4 id="market-title" class="mb-0 fw-bold">Live Price Matrix</h4>
+                                <h4 id="market-title" class="mb-0 fw-bold" data-i18n="market_prices">Live Price Matrix</h4>
                                 <div class="d-flex gap-2">
                                     <div class="input-group input-group-sm" style="width: 200px;">
                                         <span class="input-group-text bg-transparent border-end-0 border-white-10"><i class="ph ph-magnifying-glass opacity-50"></i></span>
@@ -1085,7 +1085,7 @@
                         style="width: 45px; height: 45px; background: rgba(96, 165, 250, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #60a5fa;">
                         <i class="ph ph-cloud-sun" style="font-size: 1.8rem;"></i>
                     </div>
-                    <h2 class="mb-0 fw-bold" style="border:none; padding:0;">Weather Station</h2>
+                    <h2 class="mb-0 fw-bold" style="border:none; padding:0;" data-i18n="weather_advisory">Weather Station</h2>
                 </div>
 
                 <!-- Windy Map Integration -->
@@ -1261,7 +1261,7 @@
                         style="width: 45px; height: 45px; background: rgba(96, 165, 250, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #60a5fa;">
                         <i class="ph ph-currency-circle-dollar" style="font-size: 1.8rem;"></i>
                     </div>
-                    <h2 class="mb-0 fw-bold" style="border:none; padding:0;">Profit Intelligence</h2>
+                    <h2 class="mb-0 fw-bold" style="border:none; padding:0;" data-i18n="profit_planner">Profit Intelligence</h2>
                 </div>
 
                 <div class="glass-card overflow-hidden" style="padding: 0; border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%);">
@@ -1334,7 +1334,7 @@
                                 <div class="alert bg-primary bg-opacity-10 border border-primary border-opacity-25 text-white p-4 d-flex gap-3 align-items-center mb-0 mt-auto" style="border-radius: 16px;">
                                     <div class="bg-primary rounded-circle p-2 d-flex"><i class="ph ph-sparkle text-black fs-4"></i></div>
                                     <div class="flex-grow-1">
-                                        <h6 class="fw-bold text-primary mb-1">Financial Intelligence Advisory</h6>
+                                        <h6 class="fw-bold text-primary mb-1" data-i18n="ai_advisory">Financial Intelligence Advisory</h6>
                                         <p class="mb-0 small" id="profit-ai-advisory">Conditions optimal for current plans.</p>
                                     </div>
                                     <div class="d-flex gap-2">
@@ -3418,6 +3418,8 @@
         <span id="voice-live-transcript">Listening… say a page name</span>
     </div>
 
+    <!-- i18n must load before voice.js -->
+    <script src="js/i18n.js"></script>
     <!-- Voice AI system controlled by voice.js and actionEngine.js -->
     <!-- Voice AI Architecture -->
     <script src="js/voice.js"></script>
@@ -3426,28 +3428,26 @@
         'use strict';
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Wire mic button
             const btn = document.getElementById('master-ai-btn');
             if (btn) btn.onclick = function(e) { 
                 e.stopPropagation(); 
                 if (window.toggleRecording) window.toggleRecording();
             };
             
+            // Sync dropdown to persisted language
             const gls = document.getElementById('global-language-selector');
-            if (gls) gls.addEventListener('change', function() {
-                // Whisper handles language automatically, but we can set context if needed
-                console.log("Language changed to:", this.value);
-            });
+            if (gls) {
+                const saved = localStorage.getItem('agriLang') || 'en';
+                gls.value = saved;
+                // LangManager.init() is called by i18n.js DOMContentLoaded
+            }
         });
-
-        window.vcLang = function(el, lang) {
-            document.querySelectorAll('.vc-lang-chip').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            window.speak('Language preference updated');
-        };
     })();
     </script>
     <script src="js/commandContext.js"></script>
     <script src="js/actionEngine.js"></script>
+    <script src="js/commandProcessor.js"></script>
     <script src="js/app-optimized.js" defer></script>
 </body>
 </html>

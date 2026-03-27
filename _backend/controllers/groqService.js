@@ -58,8 +58,10 @@ async function handleVoice(req, res) {
     }
 
     let text = '';
-    const audioBuffer = req.body.file; // Set by busboy middleware in server.js
+    const audioBuffer = req.body.file;
     const jsonText = req.body.text;
+    // Language from frontend (te, hi, ta, en). Default to 'en'
+    const lang = (req.body.lang || req.body.language || 'en').toLowerCase().substring(0, 2);
 
     try {
         // ── Step 1: Transcribe audio with Whisper if audio was uploaded ──────
@@ -70,12 +72,12 @@ async function handleVoice(req, res) {
             fs.writeFileSync(tempPath, audioBuffer);
 
             try {
-                console.log('[Voice API] Transcribing with Whisper...');
+                console.log('[Voice API] Transcribing with Whisper, lang:', lang);
                 const transcription = await groq.audio.transcriptions.create({
                     file: fs.createReadStream(tempPath),
                     model: 'whisper-large-v3',
                     response_format: 'json',
-                    language: 'en'
+                    language: lang  // Pass user's language for better accuracy
                 });
                 text = (transcription.text || '').trim();
                 console.log('[Voice API] Whisper transcript:', text);
@@ -101,11 +103,20 @@ async function handleVoice(req, res) {
             return res.status(400).json({ success: false, error: 'No audio or text provided.' });
         }
 
-        // ── Step 2: Send to Groq LLM for intent + response ───────────────────
-        console.log('[Voice API] Sending to Groq LLM...');
+        // ── Step 2: Build language-injected system prompt ─────────────────────
+        const langNames = { en: 'English', te: 'Telugu', hi: 'Hindi', ta: 'Tamil' };
+        const langName = langNames[lang] || 'English';
+        const langInstruction = lang === 'en'
+            ? 'Always respond in English.'
+            : `CRITICAL: You MUST respond ENTIRELY in ${langName} language. Every word of the "speech" field must be in ${langName} script. Do NOT mix with English except for numbers and proper nouns.`;
+
+        const fullPrompt = SYSTEM_PROMPT + '\n\n' + langInstruction;
+
+        // ── Step 3: Send to Groq LLM ─────────────────────────────────────────
+        console.log('[Voice API] Sending to Groq LLM, response language:', langName);
         const completion = await groq.chat.completions.create({
             messages: [
-                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'system', content: fullPrompt },
                 { role: 'user', content: text }
             ],
             model: 'llama-3.3-70b-versatile',
