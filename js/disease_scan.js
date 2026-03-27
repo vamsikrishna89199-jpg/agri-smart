@@ -24,7 +24,7 @@ async function analyzeDiseaseImage(selectedFile, userNotes = "") {
     if (userNotes) formData.append("prompt", userNotes);
 
     try {
-        const response = await fetch('/api/ai', {
+        const response = await fetch('/api/ai/disease', {
             method: 'POST',
             body: formData
         });
@@ -77,9 +77,19 @@ function displayScanResult(data) {
 
     resultsDiv.innerHTML = `
         <div class="glass-card" style="padding: 20px; text-align: left; animation: slideUp 0.5s ease;">
-            <h3 style="color: var(--accent); margin-bottom: 15px;">
-                <i class="ph-bold ph-leaf"></i> Analysis Results
-            </h3>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 style="color: var(--accent); margin-bottom: 0;">
+                    <i class="ph-bold ph-leaf"></i> Analysis Results
+                </h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-dark rounded-circle" onclick="window.speak('${data.disease_name}. Confidence: ${confidenceScore}%.')">
+                        <i class="ph ph-speaker-high"></i>
+                    </button>
+                    <button class="btn btn-sm btn-dark rounded-circle text-success" onclick="shareToWhatsApp('AgriSmart Disease Alert: ${data.disease_name} identified with ${confidenceScore}% confidence. Recommendations: ${data.organic_remedies[0]}')">
+                        <i class="ph ph-whatsapp-logo"></i>
+                    </button>
+                </div>
+            </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                 <div class="stat-card" style="padding: 10px;">

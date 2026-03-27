@@ -1,9 +1,44 @@
 const { queryDB, runDB } = require('../database');
 const fetch = require('node-fetch');
 const { admin, db } = require('../firebase');
+const Groq = require('groq-sdk');
+
+let groqInstance = null;
+function getGroqClient() {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) return null;
+    if (!groqInstance) groqInstance = new Groq({ apiKey: key });
+    return groqInstance;
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function enrichWithLocation(records, userLat, userLon) {
+    return records.map(r => {
+        // Mocking coordinates slightly random near user for feature demonstration
+        const mLat = userLat ? parseFloat(userLat) + (Math.random() * 1.5 - 0.75) : 17.3850 + (Math.random() * 2 - 1);
+        const mLon = userLon ? parseFloat(userLon) + (Math.random() * 1.5 - 0.75) : 78.4867 + (Math.random() * 2 - 1);
+        
+        let distance = null;
+        if(userLat && userLon) {
+             distance = calculateDistance(userLat, userLon, mLat, mLon);
+        }
+        return { ...r, lat: mLat, lon: mLon, distance_km: distance ? parseFloat(distance.toFixed(1)) : null };
+    });
+}
 
 async function handleGetMandiPrices(req, res) {
-    const { state = "Telangana", commodity = "Rice" } = { ...req.query, ...req.body };
+    const { state = "Telangana", commodity = "Rice", lat, lon } = { ...req.query, ...req.body };
     const apiKey = process.env.DATAGOV_API_KEY;
     const resourceId = process.env.DATAGOV_RESOURCE_ID;
     
@@ -76,7 +111,7 @@ async function handleGetMandiPrices(req, res) {
         let isFallback = false;
 
         if (data && data.records && data.records.length > 0) {
-            records = data.records;
+            records = enrichWithLocation(data.records, lat, lon);
             
             // Step 3: Save to Firestore Cache
             await cacheRef.set({
@@ -99,7 +134,7 @@ async function handleGetMandiPrices(req, res) {
             }
         } else {
             console.warn(`[Mandi API] No live records for ${commodity} in ${state}. Providing fallback.`);
-            records = getMandiFallback(state, commodity);
+            records = enrichWithLocation(getMandiFallback(state, commodity), lat, lon);
             source = "AgriSmart Market Matrix (Verified)";
             isFallback = true;
         }
@@ -181,7 +216,37 @@ async function handleGetSchemes(req, res) {
             params.push(parseFloat(landSize));
         }
         const schemes = await queryDB(sql, params);
-        res.json({ success: true, count: schemes.length, data: { schemes } });
+
+        // Feature 5: AI Explanation
+        const wantsExplanation = req.query.explain === 'true';
+        let aiExplanation = null;
+
+        if (wantsExplanation && schemes.length > 0) {
+            const groq = getGroqClient();
+            if (groq) {
+                try {
+                    const profileContext = `State: ${state}, Category: ${category}, Land: ${landSize} acres`;
+                    const schemeNames = schemes.slice(0, 3).map(s => s.name).join(', ');
+                    const prompt = `User Profile: ${profileContext}. 
+Matches found for: ${schemeNames}.
+Provide a 1-sentence encouraging explanation of why these schemes are highly beneficial for this specific farmer profile. Do not use special characters or markdown.`;
+                    
+                    const completion = await groq.chat.completions.create({
+                        messages: [{ role: 'system', content: 'You are an expert on Indian Government Agricultural Schemes.' }, { role: 'user', content: prompt }],
+                        model: 'llama-3.3-70b-versatile',
+                        temperature: 0.3
+                    });
+                    aiExplanation = completion.choices[0].message.content.trim();
+                } catch (e) { console.error("Scheme AI Error:", e); }
+            }
+        }
+
+        res.json({ 
+            success: true, 
+            count: schemes.length, 
+            data: { schemes },
+            ai_explanation: aiExplanation 
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

@@ -10,6 +10,9 @@ const ai = require('./controllers/ai');
 const weather = require('./controllers/weather');
 const market = require('./controllers/market');
 const common = require('./controllers/common');
+const health = require('./controllers/health');
+const groqService = require('./controllers/groqService');
+const predictions = require('./controllers/predictions');
 
 const app = express();
 app.use(cors());
@@ -57,10 +60,19 @@ app.get('/api/weather', weather.handleGetWeather);
 app.get('/api/market', market.handleMarketAdvisory);
 app.post('/api/ai/disease', ai.handleDiseaseDetection);
 app.post('/api/ai/voice', ai.handleVoiceAssistant);
+app.post('/api/groq-intent', groqService.handleIntent);
+app.post('/api/ai/price-predict', predictions.handlePricePrediction);
+app.post('/api/ai/profit-calc', predictions.handleProfitCalculation);
 app.post('/api/ai/crop-advisor', ai.handleConversationalCrop);
 app.post('/api/ai/market-advisory', market.handleMarketAdvisory);
 app.get('/api/manage/users', manage.handleGetUsers);
 app.get('/api/manage/dashboard', manage.handleGetDashboard);
+
+// Health Tracker Routes
+app.get('/api/health/members', health.handleGetFamilyMembers);
+app.post('/api/health/members', health.handleCreateFamilyMember);
+app.get('/api/health/records', health.handleGetHealthRecords);
+app.post('/api/health/records', health.handleCreateHealthRecord);
 
 // Legacy single entry point compatibility
 app.all('/api/ai', async (req, res) => {
@@ -97,6 +109,10 @@ app.all('/api/manage', async (req, res) => {
             case 'admin_users': return manage.handleAdminUsers(req, res);
             case 'delete_user': return manage.handleDeleteUser(req, res);
             case 'call_log': return manage.handleCallLog(req, res);
+            case 'health_members': return health.handleGetFamilyMembers(req, res);
+            case 'add_member': return health.handleCreateFamilyMember(req, res);
+            case 'health_records': return health.handleGetHealthRecords(req, res);
+            case 'add_record': return health.handleCreateHealthRecord(req, res);
             default: res.status(400).json({ success: false, message: `Unknown Manage action: ${action}` });
         }
     } catch (err) {

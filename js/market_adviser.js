@@ -118,7 +118,10 @@ function renderAdviserResult(data) {
 
                     <div class="alert ${data.recommendation.toLowerCase().includes('sell') ? 'alert-success' : 'alert-warning'} border-0 text-center py-4 mb-3" 
                          style="background: rgba(255,255,255,0.05);">
-                        <div class="h1 fw-bold mb-1">${data.recommendation}</div>
+                        <div class="d-flex justify-content-center align-items-center gap-3 mb-1">
+                            <div class="h1 fw-bold mb-0">${data.recommendation}</div>
+                            <button class="btn btn-sm btn-dark rounded-circle" onclick="window.speak('${data.recommendation}. ${data.reason}')"><i class="ph ph-speaker-high"></i></button>
+                        </div>
                         <p class="mb-0 text-white-50">${data.reason}</p>
                     </div>
 

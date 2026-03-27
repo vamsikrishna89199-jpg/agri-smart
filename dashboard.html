@@ -72,6 +72,9 @@
                 <li class="nav-item" onclick="navigate('schemes')"><i class="ph ph-bank"></i> <span
                         data-i18n="nav_schemes">Govt Schemes</span>
                 </li>
+                <li class="nav-item" onclick="navigate('health')"><i class="ph ph-heartbeat"></i> <span
+                        data-i18n="nav_health">Health Track</span>
+                </li>
                 <li class="nav-item" onclick="toggleMoreMenu()"><i class="ph ph-squares-four"></i> <span
                         data-i18n="nav_more">More</span>
                 </li>
@@ -139,8 +142,14 @@
             <div class="more-card" onclick="navigate('schemes'); toggleMoreMenu()">
                 <i class="ph ph-bank"></i> <span>Schemes</span>
             </div>
+            <div class="more-card" onclick="navigate('profit_intel'); toggleMoreMenu()">
+                <i class="ph ph-currency-circle-dollar"></i> <span>Profit Planner</span>
+            </div>
             <div class="more-card" onclick="navigate('expenses'); toggleMoreMenu()">
                 <i class="ph ph-wallet"></i> <span>Expenses</span>
+            </div>
+            <div class="more-card" onclick="navigate('health'); toggleMoreMenu()">
+                <i class="ph ph-heartbeat"></i> <span>Health Track</span>
             </div>
             <div class="more-card" onclick="navigate('profile'); toggleMoreMenu()">
                 <i class="ph ph-user"></i> <span>Profile</span>
@@ -167,9 +176,36 @@
                 </div>
 
 
-                <!-- Global Language Selector & Live Location Display (Top Right) -->
+                <!-- Notification Bell & Global Selector -->
                 <div
-                    style="position: fixed; right: 0; top: 20px; z-index: 9999; display: flex; align-items: center; gap: 10px;">
+                    style="position: fixed; right: 20px; top: 20px; z-index: 9999; display: flex; align-items: center; gap: 15px;">
+
+                    <!-- Notification Bell -->
+                    <div class="position-relative cursor-pointer" id="notification-trigger" onclick="toggleAlertCenter()">
+                        <div class="glass-card m-0 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; padding: 0; background: rgba(0,0,0,0.5); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                            <i class="ph ph-bell fs-4 text-white"></i>
+                        </div>
+                        <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" style="display: none; font-size: 0.6rem; padding: 0.35em 0.5em; z-index: 10;">
+                            0
+                        </span>
+                        
+                        <!-- Alert Center Dropdown -->
+                        <div id="alert-center" class="glass-card position-absolute end-0 mt-2 p-0 overflow-hidden shadow-lg animate__animated animate__fadeInDown" style="display: none; width: 320px; z-index: 10000; top: 50px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="p-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold"><i class="ph-fill ph-megaphone text-accent"></i> Smart Alerts</h6>
+                                <span class="small opacity-50 cursor-pointer" onclick="markAllAlertsRead()">Clear All</span>
+                            </div>
+                            <div id="alert-list" style="max-height: 400px; overflow-y: auto;">
+                                <div class="p-4 text-center opacity-50 small">
+                                    <i class="ph ph-notification fs-2 mb-2"></i>
+                                    <p class="mb-0">No new alerts. Your farm is safe!</p>
+                                </div>
+                            </div>
+                            <div class="p-2 border-top border-white border-opacity-10 text-center">
+                                <button class="btn btn-link btn-sm text-accent text-decoration-none small fw-bold">View All Notifications</button>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Language Selector Dropdown -->
                     <div class="glass-card"
@@ -240,6 +276,22 @@
                                 </div>
                             </div>
 
+                            <!-- Family Summary -->
+                            <div class="glass-card mb-4 p-3 d-flex align-items-center justify-content-between" 
+                                 style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); cursor: pointer;"
+                                 onclick="navigate('health')">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-accent bg-opacity-10 text-accent p-2 rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="ph ph-users-three fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small fw-bold">Family Members</div>
+                                        <div class="x-small opacity-50" id="dash-family-count">Loading profiles...</div>
+                                    </div>
+                                </div>
+                                <i class="ph ph-caret-right opacity-30"></i>
+                            </div>
+
                             <!-- Dashboard Quick Actions -->
                             <div class="d-flex gap-3">
                                 <button class="btn btn-outline-light btn-sm px-3 rounded-pill"
@@ -253,6 +305,10 @@
                                 <button class="btn btn-outline-light btn-sm px-3 rounded-pill"
                                     onclick="navigate('scan')">
                                     <i class="ph ph-scan"></i> Health Scan
+                                </button>
+                                <button class="btn btn-outline-light btn-sm px-3 rounded-pill"
+                                    onclick="navigate('health')">
+                                    <i class="ph ph-heartbeat"></i> Health Track
                                 </button>
                             </div>
                         </div>
@@ -1197,6 +1253,100 @@
                     </div>
                 </div>
             </section>
+            
+            <!-- 11.5 Profit Intelligence Section (NEW) -->
+            <section id="profit_intel" class="page-section">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div
+                        style="width: 45px; height: 45px; background: rgba(96, 165, 250, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                        <i class="ph ph-currency-circle-dollar" style="font-size: 1.8rem;"></i>
+                    </div>
+                    <h2 class="mb-0 fw-bold" style="border:none; padding:0;">Profit Intelligence</h2>
+                </div>
+
+                <div class="glass-card overflow-hidden" style="padding: 0; border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%);">
+                    <div class="row g-0">
+                        <div class="col-lg-5 p-4 p-md-5 border-end border-white border-opacity-10">
+                            <h3 class="fw-bold mb-4">ROI Planner</h3>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted mb-1">Target Crop</label>
+                                    <select id="profit-crop" class="form-select bg-black bg-opacity-30 border-0 text-white py-3" style="border-radius:12px;">
+                                        <option value="Rice">Rice/Paddy</option>
+                                        <option value="Wheat">Wheat</option>
+                                        <option value="Cotton">Cotton</option>
+                                        <option value="Tomato">Tomato</option>
+                                        <option value="Onion">Onion</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted mb-1">Land Area (Acres)</label>
+                                    <input type="number" id="profit-land" class="form-control bg-black bg-opacity-30 border-0 text-white py-3" placeholder="e.g. 2" style="border-radius:12px;">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted mb-1">Cost / Acre (₹)</label>
+                                    <input type="number" id="profit-cost" class="form-control bg-black bg-opacity-30 border-0 text-white py-3" value="15000" style="border-radius:12px;">
+                                </div>
+                                <div class="col-12">
+                                    <label class="small text-muted mb-1">Exp. Yield / Acre (Quintals)</label>
+                                    <input type="number" id="profit-yield" class="form-control bg-black bg-opacity-30 border-0 text-white py-3" value="15" style="border-radius:12px;">
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button class="btn btn-primary w-100 py-3 fw-bold shadow-lg" style="border-radius:12px; font-size:1.1rem;" onclick="calculateExpectedProfit()">
+                                        <i class="ph ph-chart-line-up"></i> CALCULATE ROI
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7 p-4 p-md-5 d-flex flex-column">
+                            <div id="profit-result-placeholder" class="m-auto text-center opacity-40">
+                                <i class="ph ph-calculator fs-1 mb-3"></i>
+                                <p>Enter your farm data to see AI profit analysis</p>
+                            </div>
+                            <div id="profit-result-content" style="display:none;">
+                                <div class="row g-4 mb-4">
+                                    <div class="col-sm-4 text-center">
+                                        <div class="small opacity-60">Total Cost</div>
+                                        <div class="fs-4 fw-bold text-danger" id="profit-total-cost">₹0</div>
+                                    </div>
+                                    <div class="col-sm-4 text-center border-start border-white border-opacity-10">
+                                        <div class="small opacity-60">Total Revenue</div>
+                                        <div class="fs-4 fw-bold text-success" id="profit-total-rev">₹0</div>
+                                    </div>
+                                    <div class="col-sm-4 text-center border-start border-white border-opacity-10">
+                                        <div class="small opacity-60">Net Profit</div>
+                                        <div class="fs-3 fw-bold text-accent" id="profit-total-net" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);">₹0</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Profit Margin Bar -->
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>ROI Margin</span>
+                                        <span id="profit-margin-perc" class="fw-bold">0%</span>
+                                    </div>
+                                    <div class="progress bg-black bg-opacity-30 overflow-visible" style="height: 12px; border-radius: 6px;">
+                                        <div id="profit-margin-bar" class="progress-bar bg-accent" style="width: 0%; border-radius: 6px; box-shadow: 0 0 10px var(--accent);"></div>
+                                    </div>
+                                </div>
+
+                                <!-- AI Advisory -->
+                                <div class="alert bg-primary bg-opacity-10 border border-primary border-opacity-25 text-white p-4 d-flex gap-3 align-items-center mb-0 mt-auto" style="border-radius: 16px;">
+                                    <div class="bg-primary rounded-circle p-2 d-flex"><i class="ph ph-sparkle text-black fs-4"></i></div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-primary mb-1">Financial Intelligence Advisory</h6>
+                                        <p class="mb-0 small" id="profit-ai-advisory">Conditions optimal for current plans.</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary border-0 rounded-circle" id="profit-read-aloud"><i class="ph ph-speaker-high" style="font-size: 1.2rem;"></i></button>
+                                        <button class="btn btn-sm btn-outline-primary border-0 rounded-circle" id="profit-share-wa"><i class="ph ph-whatsapp-logo" style="font-size: 1.2rem;"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- 12. Subsidy & Government Schemes Section -->
             <section id="schemes" class="page-section">
@@ -1383,6 +1533,23 @@
                         </div>
                     </div>
                     <div class="col-md-12 mt-4">
+                        <div class="glass-card border-warning">
+                            <h3 class="text-warning"><i class="ph ph-database"></i> Database Management</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h5 class="mb-2">Mandi Data</h5>
+                                    <p class="small text-muted">Force refresh the centralized Mandi Cache from Data.gov.in</p>
+                                    <button class="btn btn-outline-warning w-100" onclick="updateMarketPricesTable(true)"><i class="ph ph-arrows-clockwise"></i> Force Sync Mandi Data</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="mb-2">Schemes & Datasets</h5>
+                                    <p class="small text-muted">Re-validate the SQLite and Firebase schema caches</p>
+                                    <button class="btn btn-outline-warning w-100" onclick="showToast('Datasets re-validated successfully')"><i class="ph ph-file-sql"></i> Update Datasets</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mt-4">
                         <div class="glass-card">
                             <h3>User Management</h3>
                             <div class="table-responsive">
@@ -1488,6 +1655,21 @@
                                 <div class="col-sm-6">
                                     <label class="small text-muted mb-1">Email Address</label>
                                     <input type="email" id="edit-email" class="form-control" value="vamsi@kisan.ai"
+                                        style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 10px;">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted mb-1">Location / Village</label>
+                                    <input type="text" id="edit-location" class="form-control" placeholder="e.g. Warangal"
+                                        style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 10px;">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted mb-1">Primary Crops</label>
+                                    <input type="text" id="edit-crops" class="form-control" placeholder="e.g. Rice, Cotton"
+                                        style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 10px;">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted mb-1">Land Size (Acres)</label>
+                                    <input type="number" id="edit-land" class="form-control" placeholder="e.g. 5"
                                         style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 10px;">
                                 </div>
                                 <div class="col-12">
@@ -2811,6 +2993,93 @@
                 </div>
             </section>
 
+            <!-- 11. Health Track (Family Health Management) -->
+            <section id="health" class="page-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1"><i class="ph ph-heartbeat"></i> Family Health Tracker</h2>
+                        <p class="text-white-50 small mb-0 font-outfit">Track and manage medical history for your entire family</p>
+                    </div>
+                    <button class="btn btn-accent rounded-pill px-4 fw-bold" onclick="showAddFamilyMemberModal()">
+                        <i class="ph ph-plus-circle"></i> Add Family Member
+                    </button>
+                </div>
+
+                <!-- Family Member Grid -->
+                <div id="family-members-grid" class="row g-4 mt-2">
+                    <!-- Members will be loaded here via JS -->
+                    <div class="col-12 text-center py-5 opacity-50">
+                        <i class="ph ph-users-four" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No family members added yet. Start by adding your first member!</p>
+                    </div>
+                </div>
+
+                <!-- Specialized Health Insights (AI Generated) -->
+                <div class="glass-card mt-5 p-4 border-top border-4" style="border-top-color: var(--accent) !important; background: rgba(74, 222, 128, 0.05);">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-accent text-black p-2 rounded-circle"><i class="ph-bold ph-sparkle"></i></div>
+                        <h5 class="mb-0 fw-bold">AI Health Advisory</h5>
+                    </div>
+                    <p id="health-ai-advice" class="small mb-0 opacity-80">Add family members and health records to get personalized AI health tips and vaccination reminders for your household.</p>
+                </div>
+            </section>
+
+            <section id="health-detail" class="page-section">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <button class="btn btn-outline-light rounded-circle" onclick="navigate('health')" style="width: 40px; height: 40px; padding: 0;">
+                        <i class="ph-bold ph-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2 class="mb-0" id="selected-member-name">Member Name</h2>
+                        <p class="text-white-50 small mb-0" id="selected-member-meta">Relation | Age | Blood Group</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Health Timeline (Diagnostic History) -->
+                    <div class="col-lg-8">
+                        <div class="glass-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0 fw-bold">Medical History Timeline</h4>
+                                <button class="btn btn-sm btn-outline-accent rounded-pill px-3" onclick="showAddHealthRecordModal()">
+                                    <i class="ph ph-plus"></i> New Record
+                                </button>
+                            </div>
+                            <div id="health-timeline" class="timeline-container px-3 mt-4" style="max-height: 600px; overflow-y: auto;">
+                                <!-- Health records loaded here -->
+                                <div class="text-center py-4 opacity-40 italic">No medical records found for this member.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats & Vitals -->
+                    <div class="col-lg-4">
+                        <div class="glass-card p-4 mb-4">
+                            <h5 class="fw-bold mb-3"><i class="ph ph-activity text-accent"></i> Key Vitals</h5>
+                            <div id="vitals-container">
+                                <div class="d-flex justify-content-between py-2 border-bottom border-white border-opacity-10">
+                                    <span class="opacity-50 small">Blood Pressure</span>
+                                    <span class="fw-bold text-accent" id="vital-bp">--</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2 border-bottom border-white border-opacity-10">
+                                    <span class="opacity-50 small">Sugar Level</span>
+                                    <span class="fw-bold text-warning" id="vital-sugar">--</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2">
+                                    <span class="opacity-50 small">Last Checkup</span>
+                                    <span class="fw-bold" id="last-checkup-date">Never</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-4">
+                            <h5 class="fw-bold mb-3"><i class="ph ph-warning-circle text-info"></i> Critical Notes</h5>
+                            <p id="member-notes" class="small opacity-70 mb-0 italic">No critical allergies or chronic conditions noted.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 12. Smart Irrigation & IoT -->
             <section id="irrigation" class="page-section">
                 <h2><i class="ph ph-drop"></i> Smart Irrigation & Sensors</h2>
@@ -3017,7 +3286,168 @@
     <script src="js/market_adviser.js"></script>
 
 
+    <!-- Health Tracker Modals -->
+    <div class="modal fade" id="addFamilyMemberModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border-0" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);">
+                <div class="modal-header border-white border-opacity-10">
+                    <h5 class="modal-title fw-bold"><i class="ph ph-user-plus text-accent"></i> Add Family Member</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addFamilyMemberForm">
+                        <div class="mb-3">
+                            <label class="small text-white-50 mb-2">Full Name</label>
+                            <input type="text" id="member-name" class="form-control glass-input" placeholder="e.g. Ramesh Kumar" required>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Age</label>
+                                <input type="number" id="member-age" class="form-control glass-input" placeholder="Age" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Relation</label>
+                                <select id="member-relation" class="form-select glass-input">
+                                    <option value="Self">Self</option>
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Son">Son</option>
+                                    <option value="Daughter">Daughter</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Gender</label>
+                                <select id="member-gender" class="form-select glass-input">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Blood Group</label>
+                                <select id="member-blood" class="form-select glass-input">
+                                    <option value="Unknown">Unknown</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-accent w-100 py-3 fw-bold rounded-pill">Create Member Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addHealthRecordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border-0" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);">
+                <div class="modal-header border-white border-opacity-10">
+                    <h5 class="modal-title fw-bold"><i class="ph ph-file-medical text-accent"></i> New Health Record</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addHealthRecordForm">
+                        <div class="mb-3">
+                            <label class="small text-white-50 mb-2">Diagnosis / Reason</label>
+                            <input type="text" id="record-diagnosis" class="form-control glass-input" placeholder="e.g. Annual Checkup, Fever, etc." required>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Date</label>
+                                <input type="date" id="record-date" class="form-control glass-input" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-white-50 mb-2">Doctor Name</label>
+                                <input type="text" id="record-doctor" class="form-control glass-input" placeholder="Dr. Sharma">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="small text-white-50 mb-2">Notes / Prescription</label>
+                            <textarea id="record-notes" class="form-control glass-input" rows="3" placeholder="Any specific medicines or advice..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-accent w-100 py-3 fw-bold rounded-pill">Save Medical Record</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .timeline-container { position: relative; padding-left: 20px; border-left: 2px solid rgba(255,255,255,0.1); }
+        .timeline-item { position: relative; margin-bottom: 30px; }
+        .timeline-item::before { 
+            content: ''; position: absolute; left: -27px; top: 0; 
+            width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+        .member-card { cursor: pointer; transition: all 0.3s ease; }
+        .member-card:hover { transform: translateY(-5px); border-color: var(--accent) !important; background: rgba(255,255,255,0.05) !important; }
+
+        #voice-bar {
+            position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.88); color: #fff;
+            border: 1px solid var(--accent); padding: 7px 24px;
+            border-radius: 24px; font-size: 0.82rem; z-index: 9998;
+            max-width: 400px; text-align: center; backdrop-filter: blur(18px);
+            display: none;
+        }
+        #voice-bar.active { display: block; }
+        .vb-dot { display:inline-block; width:8px; height:8px; border-radius:50%;
+            background:var(--accent); margin-right:7px; animation:vbpulse 1s infinite; }
+        @keyframes vbpulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+        .vc-lang-chip { cursor:pointer; border-radius:20px; padding:4px 14px;
+            border:1px solid rgba(255,255,255,0.2); font-size:0.75rem;
+            background:rgba(255,255,255,0.05); transition:all 0.2s; color:#fff; }
+        .vc-lang-chip:hover, .vc-lang-chip.active {
+            background:var(--accent); color:#000; border-color:var(--accent); }
+    </style>
+
+    <!-- Live transcript pill shown while mic is active -->
+    <div id="voice-bar">
+        <span class="vb-dot"></span>
+        <span id="voice-live-transcript">Listening… say a page name</span>
+    </div>
+
+    <!-- Voice AI system controlled by voice.js and actionEngine.js -->
+    <!-- Voice AI Architecture -->
+    <script src="js/voice.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('master-ai-btn');
+            if (btn) btn.onclick = function(e) { 
+                e.stopPropagation(); 
+                if (window.toggleRecording) window.toggleRecording();
+            };
+            
+            const gls = document.getElementById('global-language-selector');
+            if (gls) gls.addEventListener('change', function() {
+                // Whisper handles language automatically, but we can set context if needed
+                console.log("Language changed to:", this.value);
+            });
+        });
+
+        window.vcLang = function(el, lang) {
+            document.querySelectorAll('.vc-lang-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            window.speak('Language preference updated');
+        };
+    })();
+    </script>
+    <script src="js/commandContext.js"></script>
+    <script src="js/actionEngine.js"></script>
     <script src="js/app-optimized.js" defer></script>
 </body>
-
 </html>

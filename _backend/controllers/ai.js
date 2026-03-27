@@ -213,7 +213,7 @@ async function handleVoiceAssistant(req, res) {
         const completion = await groq.chat.completions.create({
             messages: [{ 
                 role: 'system', 
-                content: 'You are AgriSmart Brain, an AI agricultural assistant. You help farmers with crop advice, weather info, and farm management. Respond only in JSON with fields: "speech" (natural text), "action" (NAVIGATE, CONTROL_PUMP, START_SCAN, or NONE), and "params" (object).' 
+                content: 'You are AgriSmart Brain, an AI agricultural assistant. You help farmers with crop advice, weather info, and farm management. Respond only in JSON with fields: "speech" (natural text), "action" (NAVIGATE, CONTROL_PUMP, START_SCAN, or NONE), and "params" (object). Valid NAVIGATE targets are: agriSmart, market, scan, dash, farmer_tools, schemes, health, community, marketplace, irrigation, expenses, profile, todo, weather, crop_advisor. Use these targets in params.target when action is NAVIGATE.' 
             }, { 
                 role: 'user', 
                 content: String(query) // Force string 

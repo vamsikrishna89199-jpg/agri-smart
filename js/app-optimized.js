@@ -10,6 +10,11 @@
         const storage_fb = storage;
         const messaging_fb = (typeof messaging !== 'undefined') ? messaging : null;
 
+        window.shareToWhatsApp = function(text) {
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        };
+
         // --- Navigation Functions ---
         const UI_ELEMENTS = {
             sidebar: null,
@@ -62,6 +67,8 @@
 
             // Special handling
             if (pageId === 'admin') loadAdminData();
+            if (pageId === 'health') loadHealthDashboard();
+            if (pageId === 'agriSmart') updateDashFamilyCount();
             if (pageId === 'profile' || pageId === 'agriSmart' || pageId === 'dash') {
                 // Debounce history fetch
                 clearTimeout(window._historyDebounce);
@@ -75,6 +82,9 @@
                 }
             }
         }
+
+        // Expose navigate globally so commandProcessor.js and voice commands can call it
+        window.navigate = navigate;
 
         function toggleMoreMenu() {
             const menu = document.getElementById('moreMenu');
@@ -475,7 +485,7 @@
             }
         }
 
-        async function saveAiInteractiontoHistory(query, response) {
+        window.saveAiInteractiontoHistory = async function saveAiInteractiontoHistory(query, response) {
             try {
                 const userId = currentUser ? currentUser.id : localStorage.getItem('user_id');
                 if (!userId) {
@@ -609,7 +619,7 @@
         // === VOICE COMMAND PROCESSING (CONSOLIDATED AT LINE 8015) ===
         // Redundant definition removed to prevent conflicts.
 
-        function playVoiceAudio(text, base64 = null) {
+        window.playVoiceAudio = function playVoiceAudio(text, base64 = null) {
             try {
                 const voiceMode = document.getElementById('ai-voice-selection')?.value || 'server';
 
@@ -1083,7 +1093,18 @@
                     }
 
                     const currentText = finalTranscript + interimTranscript;
-                    document.getElementById('ai-transcript').innerText = `"${currentText}"`;
+                    const transcriptEl = document.getElementById('ai-transcript');
+                    if (transcriptEl) transcriptEl.innerText = `"${currentText}"`;
+
+                    // Live-update voice UI transcript panel
+                    const voiceTranscript = document.getElementById('voice-live-transcript');
+                    if (voiceTranscript) voiceTranscript.innerText = interimTranscript || finalTranscript;
+
+                    // Route final transcript to the new commandProcessor (wake-word aware)
+                    if (finalTranscript.trim().length > 2 && window.processVoiceCommand) {
+                        window.processVoiceCommand(finalTranscript.trim());
+                        finalTranscript = ""; // Reset after processing
+                    }
 
                     // Auto-populate active inputs for "Voice-to-Chat" experience
                     const consInput = document.getElementById('consultation-input');
@@ -2572,14 +2593,25 @@
 
             try {
                 // Get user location for "Nearby" detection
-                let userCoords = null;
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-                    }, null, { timeout: 2000 });
+                let userLat = '';
+                let userLon = '';
+                
+                const getCoords = () => new Promise((resolve) => {
+                    if (!navigator.geolocation) return resolve(null);
+                    navigator.geolocation.getCurrentPosition(
+                        pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+                        err => resolve(null),
+                        { timeout: 2000 }
+                    );
+                });
+                
+                const coords = await getCoords();
+                if (coords) {
+                    userLat = coords.lat;
+                    userLon = coords.lon;
                 }
 
-                const response = await fetch(`${API_BASE_URL}/mandi?commodity=${crop}&state=${state}`);
+                const response = await fetch(`${API_BASE_URL}/mandi?commodity=${crop}&state=${state}&lat=${userLat}&lon=${userLon}`);
                 const res = await response.json();
 
                 if (res.success && res.data && res.data.length > 0) {
@@ -2608,15 +2640,49 @@
                         trendEl.innerHTML = `<span class="${trendClass}">${trendIcon} ${trendText}</span>`;
                     }
 
-                    // Step 5: Prediction Engine (Logic-based)
+                    // Step 5: AI Prediction Engine & Graph Render
                     if (predictionEl) {
-                        let advice = "HOLD";
-                        let adviceClass = "text-warning";
-                        if (trendText === 'Rising') { advice = "WAIT TO SELL"; adviceClass = "text-info"; }
-                        else if (trendText === 'Falling') { advice = "SELL NOW"; adviceClass = "text-danger"; }
-                        else if (parseFloat(res.data[0].modal_price) > 3000) { advice = "SELL NOW"; adviceClass = "text-success"; }
-                        
-                        predictionEl.innerHTML = `<span class="${adviceClass}">${advice}</span>`;
+                        predictionEl.innerHTML = `<div class="spinner-border spinner-border-sm text-accent"></div> <span class="small">AI Analyzing...</span>`;
+                        try {
+                            const aiRes = await fetch('/api/ai/price-predict', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    crop: crop,
+                                    state: state,
+                                    currentPrice: parseFloat(res.data[0].modal_price),
+                                    history: res.history || []
+                                })
+                            });
+                            const aiData = await aiRes.json();
+                            if (aiData.success && aiData.data) {
+                                const pred = aiData.data;
+                                const adviceClass = pred.recommendation === "SELL" ? "text-success" : (pred.recommendation === "HOLD" ? "text-warning" : "text-info");
+                                predictionEl.innerHTML = `
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        <span class="${adviceClass} fw-bold">${pred.recommendation}</span>
+                                        <button class="btn btn-sm btn-link text-white-50 p-0" onclick="window.speak('${pred.recommendation}. ${pred.reasoning}')"><i class="ph ph-speaker-high fs-5"></i></button>
+                                        <button class="btn btn-sm btn-link text-success p-0" onclick="shareToWhatsApp('AgriSmart Price Insight: ${pred.recommendation} recommendation for ${crop}. ${pred.reasoning}')"><i class="ph ph-whatsapp-logo fs-5"></i></button>
+                                    </div>
+                                    <div class="opacity-75 text-end mt-1" style="font-size:0.65rem;">${pred.reasoning}</div>
+                                `;
+                                
+                                // Feature 9: Smart Alert for Market Volatility
+                                if (pred.recommendation === "SELL") {
+                                    pushSmartAlert('Market Alert', `Sell recommendation for ${crop}: ${pred.reasoning}`, 'warning');
+                                } else if (pred.recommendation === "HOLD" && pred.confidence_score > 80) {
+                                    pushSmartAlert('Market Insight', `Strong HOLD signal for ${crop}. Potential price rise soon!`, 'success');
+                                }
+                                
+                                // Render Chart
+                                renderMandiChart(pred.predictions, parseFloat(res.data[0].modal_price), crop);
+                            } else {
+                                fallbackPredictionLogic(res, predictionEl, trendText);
+                            }
+                        } catch (e) {
+                            console.error("AI Prediction Error:", e);
+                            fallbackPredictionLogic(res, predictionEl, trendText);
+                        }
                     }
 
                     // Step 6: Render Cards
@@ -2639,7 +2705,7 @@
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="fw-bold" style="font-size: 1.1rem;">${item.market}</div>
                                         ${isHighest ? '<span class="badge bg-success text-black small" style="font-size:0.6rem;">BEST PRICE</span>' : ''}
-                                        ${Math.random() > 0.7 ? '<span class="badge bg-info text-black small" style="font-size:0.6rem;">NEARBY</span>' : ''}
+                                        ${item.distance_km && parseFloat(item.distance_km) < 150 ? `<span class="badge bg-info text-black small" style="font-size:0.6rem;">NEARBY (${item.distance_km}km)</span>` : ''}
                                     </div>
                                     <div class="small opacity-50"><i class="ph ph-map-pin"></i> ${item.district}, ${item.state}</div>
                                     <div class="small text-accent mt-1">${item.variety} | ${item.commodity}</div>
@@ -2663,13 +2729,65 @@
                         container.appendChild(card);
                     });
                 } else {
-                    container.innerHTML = '<div class="text-center py-5 opacity-50"><i class="ph ph-warning" style="font-size: 3rem;"></i><p>No active trade data for this sector.</p></div>';
+                    container.innerHTML = '<div class="text-center py-5 opacity-50"><i class="ph ph-warning-circle mb-2" style="font-size:3rem;"></i><br>No live data available for this selection.</div>';
                 }
-            } catch (error) {
-                console.error('Market fetch error:', error);
-                container.innerHTML = '<div class="text-center py-5 text-danger"><i class="ph ph-skull"></i><p>Market Matrix Link Offline.</p></div>';
+            } catch (err) {
+                console.error("Market data sync failed", err);
+                container.innerHTML = '<div class="text-center py-5 text-danger"><i class="ph ph-warning-octagon mb-2" style="font-size:3rem;"></i><br>Failed to connect to market gateway.</div>';
             }
         }
+
+        let mandiChartInstance = null;
+        function renderMandiChart(predictions, currentPrice, crop) {
+            const ctx = document.getElementById('mandiTrendChart');
+            if(!ctx) return;
+            
+            if(mandiChartInstance) mandiChartInstance.destroy();
+
+            const labels = ["Today", "Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"];
+            const dataPts = [currentPrice, ...predictions.map(p => p.predicted_price)];
+
+            mandiChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${crop} Predicted Price (₹)`,
+                        data: dataPts,
+                        borderColor: '#4ade80',
+                        backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fbbf24',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#fff' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } },
+                        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function fallbackPredictionLogic(res, predictionEl, trendText) {
+            let advice = "HOLD";
+            let adviceClass = "text-warning";
+            if (trendText === 'Rising') { advice = "WAIT TO SELL"; adviceClass = "text-info"; }
+            else if (trendText === 'Falling') { advice = "SELL NOW"; adviceClass = "text-danger"; }
+            else if (parseFloat(res.data[0].modal_price) > 3000) { advice = "SELL NOW"; adviceClass = "text-success"; }
+            
+            predictionEl.innerHTML = `<span class="${adviceClass}">${advice}</span>`;
+        }
+        // Trailing syntax removed
 
         function filterMandiTable() {
             const query = document.getElementById('mandi-search').value.toLowerCase();
@@ -2771,7 +2889,8 @@
             container.innerHTML = '<div class="text-center"><div class="spinner-border text-light"></div> Loading Detailed Weather...</div>';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/weather`, {
+                const userState = currentUser ? currentUser.state : 'Default';
+                const response = await fetch(`${API_BASE_URL}/weather?state=${encodeURIComponent(userState)}&advisory=true`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
 
@@ -2783,13 +2902,35 @@
                     const today = new Date();
 
                     container.innerHTML = `
-                        <div class="row align-items-center">
-                            <div class="col-md-6 text-center">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-md-5 text-center">
                                 <i class="ph ph-cloud-sun" style="font-size: 6rem; color: #fbbf24; margin-bottom: 10px;"></i>
                                 <div style="font-size: 4rem; font-weight: bold;">${Math.round(w.temperature)}°C</div>
                                 <div style="font-size: 1.5rem; color: var(--accent);">${w.description}</div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-7">
+                                <!-- AI Advisory Alert -->
+                                <div class="alert bg-success bg-opacity-10 border border-success border-opacity-25 text-white mb-4 d-flex gap-3 align-items-center">
+                                    <div class="bg-success rounded-circle p-2 d-flex"><i class="ph ph-sparkle text-black fs-4"></i></div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-success mb-1">AI Actionable Advisory</h6>
+                                        <p class="mb-0 small">${w.advisory || 'Conditions optimal for current plans.'}</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-success border-0 rounded-circle" onclick="window.speak('${w.advisory ? w.advisory.replace(/'/g, "\\'") : 'Conditions optimal'}')"><i class="ph ph-speaker-high" style="font-size: 1.2rem;"></i></button>
+                                        <button class="btn btn-sm btn-outline-success border-0 rounded-circle" onclick="shareToWhatsApp('AgriSmart Weather Advisory: ${w.advisory ? w.advisory.replace(/'/g, "\\'") : 'Normal weather expected.'}')"><i class="ph ph-whatsapp-logo" style="font-size: 1.2rem;"></i></button>
+                                    </div>
+                                </div>
+                                
+                                <script>
+                                    // Trigger weather alert if advisory looks critical
+                                    (function(){
+                                        const adv = "${w.advisory ? w.advisory.replace(/'/g, "\\'") : ''}";
+                                        if (adv.toLowerCase().includes('rain') || adv.toLowerCase().includes('storm') || adv.toLowerCase().includes('pest')) {
+                                            if (typeof pushSmartAlert === 'function') pushSmartAlert('Climate Alert', adv, 'warning');
+                                        }
+                                    })();
+                                </script>
                                 <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span><i class="ph ph-drop"></i> Humidity:</span>
@@ -3176,39 +3317,7 @@
         }
 
 
-        // --- Weather ---
-        async function loadWeatherDetails() {
-            const container = document.getElementById('weather-detail-container');
-
-            try {
-                const userState = currentUser ? currentUser.state : 'Default';
-                const response = await fetch(`${API_BASE_URL}/weather?state=${encodeURIComponent(userState)}`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    const w = result.data;
-                    container.innerHTML = `
-                        <div class="row text-center">
-                            <div class="col-md-6 mb-3">
-                                <i class="ph ph-sun" style="font-size: 4rem; color: var(--warning);"></i>
-                                <h3 class="mt-2">${w.temperature}°C</h3>
-                                <p>${w.description}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="glass-card mb-2">Humidity: ${w.humidity}%</div>
-                                <div class="glass-card mb-2">Wind: ${w.wind_speed} km/h</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    container.innerHTML = `<p class="text-danger">Weather unavailable</p>`;
-                }
-            } catch (e) {
-                container.innerHTML = `<p class="text-danger">Connection Error</p>`;
-            }
-        }
+        // Obsolete duplicate loadWeatherDetails function block removed.
 
         // --- Tools ---
         async function runSeedCheck() {
@@ -3694,6 +3803,7 @@
                 showToast("Voice assistant connection failed", "error");
             }
         }
+        window.processVoiceCommand = processVoiceCommand;
 
         function formatTime(isoString) {
             if (!isoString) return 'Just now';
@@ -3726,6 +3836,9 @@
             }
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-email').value = user.email || `${name}@kisan.ai`;
+            if(document.getElementById('edit-location')) document.getElementById('edit-location').value = user.location || "";
+            if(document.getElementById('edit-crops')) document.getElementById('edit-crops').value = user.crops || "";
+            if(document.getElementById('edit-land')) document.getElementById('edit-land').value = user.land_size || "";
 
             // Handle Profile Picture Sync
             const profilePic = user.profile_pic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
@@ -3792,18 +3905,7 @@
             }
         }
 
-        function saveProfileDetails() {
-            const name = document.getElementById('edit-name').value;
-            const email = document.getElementById('edit-email').value;
-
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            user.username = name;
-            user.email = email;
-            localStorage.setItem('user', JSON.stringify(user));
-
-            updateGreeting();
-            showToast("Profile details updated successfully!");
-        }
+        // Removed duplicate saveProfileDetails
 
         function savePasswordChange() {
             const curr = document.getElementById('current-pass').value;
@@ -3953,6 +4055,21 @@
                 .where('participant_ids', 'array-contains', currentUser.id.toString())
                 .onSnapshot(snapshot => {
                     chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    // INJECT AI CHAT locally if not in Firestore yet
+                    const aiChatId = `ai_assistant_${currentUser.id}`;
+                    if (!chats.find(c => c.id === aiChatId)) {
+                        chats.push({
+                            id: aiChatId,
+                            type: 'direct',
+                            participants: [{ id: 'ai_assistant', username: 'AgriSmart AI', profile_pic: 'https://api.dicebear.com/7.x/bottts/svg?seed=Agri' }],
+                            participant_ids: [currentUser.id.toString(), 'ai_assistant'],
+                            last_message_text: "Hello! I am your AI Assistant.",
+                            last_message_time: { toDate: () => new Date(), toMillis: () => Date.now() },
+                            unread_count: {}
+                        });
+                    }
+
                     // Client-side sort to avoid composite index requirement
                     chats.sort((a, b) => {
                         const tA = a.last_message_time ? a.last_message_time.toMillis() : 0;
@@ -4209,17 +4326,40 @@
             const name = document.getElementById('edit-name').value;
             const email = document.getElementById('edit-email').value;
             const bio = document.getElementById('edit-bio') ? document.getElementById('edit-bio').value : "";
+            const loc = document.getElementById('edit-location') ? document.getElementById('edit-location').value : "";
+            const crops = document.getElementById('edit-crops') ? document.getElementById('edit-crops').value : "";
+            const land = document.getElementById('edit-land') ? document.getElementById('edit-land').value : "";
 
             try {
+                const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+                userObj.username = name;
+                userObj.email = email;
+                userObj.location = loc;
+                userObj.crops = crops;
+                userObj.land_size = land;
+                localStorage.setItem('user', JSON.stringify(userObj));
+                if (currentUser) {
+                    currentUser.username = name;
+                    currentUser.email = email;
+                    currentUser.location = loc;
+                    currentUser.crops = crops;
+                    currentUser.land_size = land;
+                }
+                updateGreeting();
+
                 // Firestore Update
                 await db_fs.collection('users').doc(currentUser.id.toString()).update({
                     username: name,
                     email: email,
-                    bio: bio
+                    bio: bio,
+                    location: loc,
+                    crops: crops,
+                    land_size: land
                 });
 
-                showToast("Profile updated officially", "success");
+                showToast("Profile and farmer details updated", "success");
             } catch (e) {
+                console.error("Profile update error:", e);
                 showToast("Profile update partially failed");
             }
         }
@@ -4246,13 +4386,43 @@
 
                 await db_fs.collection('chats').doc(activeChatId).collection('messages').add(msgData);
 
-                // Update last message in chat document
-                await db_fs.collection('chats').doc(activeChatId).update({
+                // Use set with merge true in case the chat document doesn't exist yet (like new AI chat)
+                await db_fs.collection('chats').doc(activeChatId).set({
                     last_message_text: text,
-                    last_message_time: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                    last_message_time: firebase.firestore.FieldValue.serverTimestamp(),
+                    participant_ids: [currentUser.id.toString(), 'ai_assistant'] // Safe fallback
+                }, { merge: true });
 
                 input.value = '';
+
+                // Trigger AI response if chatting with AI Assistant
+                if (activeChatId === `ai_assistant_${currentUser.id}`) {
+                    setTimeout(async () => {
+                        try {
+                            const aiRes = await fetch('/api/groq-intent', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text })
+                            });
+                            const result = await aiRes.json();
+                            if (result.success && result.data && result.data.speech) {
+                                await db_fs.collection('chats').doc(activeChatId).collection('messages').add({
+                                    sender_id: 'ai_assistant',
+                                    sender_name: 'AgriSmart AI',
+                                    text: result.data.speech,
+                                    type: 'text',
+                                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                                    status: 'sent',
+                                    is_ai: true
+                                });
+                                await db_fs.collection('chats').doc(activeChatId).set({
+                                    last_message_text: result.data.speech,
+                                    last_message_time: firebase.firestore.FieldValue.serverTimestamp()
+                                }, { merge: true });
+                            }
+                        } catch(e) { console.error("AI Assistant Chat Error:", e); }
+                    }, 500);
+                }
             } catch (e) {
                 console.error("Send message error:", e);
                 showToast("Failed to send message", "error");
@@ -6508,46 +6678,443 @@
             } catch (err) { console.error('Error deleting task', err); }
         };
 
-        // --- Subsidy & Government Schemes ---
-        window.checkEligibility = function() {
-            const state = document.getElementById('elig-state')?.value;
-            const land = parseFloat(document.getElementById('elig-land')?.value);
+        // ==================== SMART ALERT SYSTEM ====================
+        let alerts = [
+            { id: 1, title: 'Welcome to AgriSmart', message: 'Set up your profile to receive personalized crop alerts.', type: 'info', read: false, time: 'Just now' }
+        ];
+
+        window.toggleAlertCenter = function() {
+            const center = document.getElementById('alert-center');
+            if (!center) return;
+            const isVisible = center.style.display === 'block';
+            center.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) renderAlerts();
+        };
+
+        window.renderAlerts = function() {
+            const list = document.getElementById('alert-list');
+            const badge = document.getElementById('notification-badge');
+            if (!list || !badge) return;
             
-            if (!state || isNaN(land)) {
-                return showToast('Please enter your land size to check benefits.', 'warning');
+            if (alerts.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center opacity-50 small"><i class="ph ph-notification fs-2 mb-2"></i><p class="mb-0">No new alerts.</p></div>';
+                badge.style.display = 'none';
+                return;
+            }
+
+            const unreadCount = alerts.filter(a => !a.read).length;
+            badge.innerText = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'block' : 'none';
+
+            list.innerHTML = alerts.map(a => `
+                <div class="p-3 border-bottom border-white border-opacity-5 cursor-pointer hover-bg-white-5 alert-item ${a.read ? 'opacity-60' : ''}" onclick="markAlertAsRead(${a.id})">
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 35px; height: 35px; background: ${getAlertBg(a.type)};">
+                            <i class="${getAlertIcon(a.type)} fs-5 text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="fw-bold small" style="font-size: 0.8rem;">${a.title}</span>
+                                <span class="extra-small opacity-50" style="font-size: 0.65rem;">${a.time}</span>
+                            </div>
+                            <p class="extra-small mb-0 opacity-80" style="font-size: 0.72rem; line-height: 1.2;">${a.message}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        function getAlertIcon(type) {
+            if (type === 'warning') return 'ph ph-warning';
+            if (type === 'price') return 'ph ph-trend-down';
+            if (type === 'success') return 'ph ph-check-circle';
+            return 'ph ph-info';
+        }
+
+        function getAlertBg(type) {
+            if (type === 'warning') return 'rgba(239, 68, 68, 0.2)';
+            if (type === 'price') return 'rgba(245, 158, 11, 0.2)';
+            if (type === 'success') return 'rgba(34, 197, 94, 0.2)';
+            return 'rgba(59, 130, 246, 0.2)';
+        }
+
+        window.markAlertAsRead = function(id) {
+            const alert = alerts.find(a => a.id === id);
+            if (alert) {
+                alert.read = true;
+                renderAlerts();
+            }
+        };
+
+        window.markAllAlertsRead = function() {
+            alerts.forEach(a => a.read = true);
+            renderAlerts();
+        };
+
+        window.pushSmartAlert = function(title, message, type = 'info') {
+            const id = Date.now();
+            alerts.unshift({ id, title, message, type, read: false, time: 'Just now' });
+            renderAlerts();
+            showToast(`${title}: ${message}`, type === 'warning' ? 'error' : 'info');
+            
+            try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.volume = 0.2;
+                audio.play().catch(() => {});
+            } catch(e) {}
+        };
+
+        document.addEventListener('click', (e) => {
+            const center = document.getElementById('alert-center');
+            const trigger = document.getElementById('notification-trigger');
+            if (center && trigger && !center.contains(e.target) && !trigger.contains(e.target)) {
+                center.style.display = 'none';
+            }
+        });
+
+        setTimeout(() => renderAlerts(), 1000);
+
+        // --- Profit Intelligence ---
+        window.calculateExpectedProfit = async function() {
+            const crop = document.getElementById('profit-crop')?.value;
+            const landSize = document.getElementById('profit-land')?.value;
+            const costPerAcre = document.getElementById('profit-cost')?.value;
+            const expectedYield = document.getElementById('profit-yield')?.value;
+            const userState = currentUser ? currentUser.state : 'Default';
+
+            if (!landSize || !costPerAcre || !expectedYield) {
+                return showToast("Please fill all fields to calculate profit", "warning");
+            }
+
+            const placeholder = document.getElementById('profit-result-placeholder');
+            const content = document.getElementById('profit-result-content');
+            
+            placeholder.innerHTML = '<div class="spinner-border text-primary fs-3 mb-3"></div><p>AI analyzing market conditions...</p>';
+            placeholder.style.display = 'block';
+            content.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/ai/profit-calc`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ crop, landSize, costPerAcre, expectedYieldPerAcre: expectedYield, state: userState })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const d = result.data;
+                    document.getElementById('profit-total-cost').innerText = `₹${d.totalCost.toLocaleString()}`;
+                    document.getElementById('profit-total-rev').innerText = `₹${d.totalRevenue.toLocaleString()}`;
+                    document.getElementById('profit-total-net').innerText = `₹${d.netProfit.toLocaleString()}`;
+                    
+                    const marginPerc = document.getElementById('profit-margin-perc');
+                    const marginBar = document.getElementById('profit-margin-bar');
+                    marginPerc.innerText = `${d.profitMargin}%`;
+                    marginBar.style.width = Math.min(Math.max(d.profitMargin, 0), 100) + '%';
+                    
+                    if (parseFloat(d.profitMargin) < 0) marginBar.classList.add('bg-danger');
+                    else marginBar.classList.remove('bg-danger');
+
+                    document.getElementById('profit-ai-advisory').innerText = d.advisory;
+                    
+                    const speakBtn = document.getElementById('profit-read-aloud');
+                    speakBtn.onclick = () => window.speak(d.advisory.replace(/'/g, "\\'"));
+                    
+                    const shareBtn = document.getElementById('profit-share-wa');
+                    shareBtn.onclick = () => shareToWhatsApp(`AgriSmart Profit Report: Expected net profit for ${crop} is ₹${d.netProfit.toLocaleString()}. ROI Margin: ${d.profitMargin}%. ${d.advisory}`);
+
+                    placeholder.style.display = 'none';
+                    content.style.display = 'block';
+                    
+                    showToast("Profit Intelligence Ready!", "success");
+                } else {
+                    showToast("Calculation failed: " + result.error, "error");
+                    placeholder.innerHTML = '<i class="ph ph-warning-circle text-danger fs-1 mb-3"></i><p>Failed to analyze data</p>';
+                }
+            } catch (err) {
+                console.error("Profit Error:", err);
+                showToast("Network Error in Financial Engine", "error");
+            }
+        };
+
+        // --- Subsidy & Government Schemes ---
+        window.checkEligibility = async function() {
+            const state = document.getElementById('elig-state')?.value;
+            const land = document.getElementById('elig-land')?.value;
+            const category = document.getElementById('elig-category')?.value || 'all';
+            const crop = document.getElementById('elig-crop')?.value;
+            
+            if (!state || !land || isNaN(parseFloat(land))) {
+                return showToast('Please enter your state and land size to check benefits.', 'warning');
             }
             
-            showToast('Analyzing eligibility for ' + state.toUpperCase() + '...', 'info');
+            showToast('Searching Government Registry...', 'info');
             
-            setTimeout(() => {
-                let recommendations = [];
+            try {
+                const response = await fetch(`${API_BASE_URL}/schemes?state=${encodeURIComponent(state)}&landSize=${land}&category=${category}&explain=true`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
                 
-                // Purely logical simulation for Hackathon
-                if (land > 0) recommendations.push('PM-KISAN (₹6k/year)');
-                if (land < 5) recommendations.push('SFAC Small Farmer Subsidy');
-                
-                if (state === 'up') recommendations.push('UP Krishi Rin Maafi Yojana');
-                else if (state === 'telangana') recommendations.push('Rythu Bandhu Scheme');
-                else if (state === 'punjab') recommendations.push('Punjab Farm Loan Waiver');
-                
-                recommendations.push('PMFBY Crop Insurance');
-                
-                const message = `You qualify for: ${recommendations.slice(0, 3).join(', ')} and more! 🔥`;
-                showToast(message, 'success', 8000);
-                
-                // Visual feedback in the grid
-                const cardGrid = document.getElementById('schemes-grid');
-                if (cardGrid) {
-                    const cards = cardGrid.querySelectorAll('.glass-card');
-                    cards.forEach(card => {
-                        if (card.innerText.includes('PM-KISAN') || card.innerText.includes('PMFBY')) {
-                            card.classList.add('border-accent');
-                            card.style.boxShadow = '0 0 15px rgba(74, 222, 128, 0.3)';
-                        } else {
-                            card.classList.remove('border-accent');
-                            card.style.boxShadow = 'none';
+                if (result.success && result.data.schemes) {
+                    const schemes = result.data.schemes;
+                    const aiAdvice = result.ai_explanation;
+                    
+                    // Show custom result modal or UI update
+                    const cardGrid = document.getElementById('schemes-grid');
+                    if (cardGrid) {
+                        const schemeNames = schemes.map(s => s.name.toUpperCase());
+                        const cards = cardGrid.querySelectorAll('.glass-card');
+                        cards.forEach(card => {
+                            const title = card.querySelector('h5')?.innerText?.toUpperCase();
+                            if (title && schemeNames.some(name => name.includes(title) || title.includes(name))) {
+                                card.classList.add('border-accent');
+                                card.style.boxShadow = '0 0 20px rgba(74, 222, 128, 0.4)';
+                            } else {
+                                card.classList.remove('border-accent');
+                                card.style.boxShadow = 'none';
+                            }
+                        });
+                    }
+
+                    if (aiAdvice) {
+                        // Create or update AI advisory area in the schemes section
+                        let advisoryBox = document.getElementById('scheme-ai-advisory');
+                        if (!advisoryBox) {
+                            const parent = document.querySelector('#schemes .col-md-8');
+                            advisoryBox = document.createElement('div');
+                            advisoryBox.id = 'scheme-ai-advisory';
+                            advisoryBox.className = 'alert bg-warning bg-opacity-10 border border-warning border-opacity-25 text-white mb-4 d-flex gap-3 align-items-center animate__animated animate__fadeIn';
+                            parent.insertBefore(advisoryBox, parent.firstChild);
                         }
-                    });
+                        advisoryBox.innerHTML = `
+                            <div class="bg-warning rounded-circle p-2 d-flex"><i class="ph ph-sparkle text-black fs-4"></i></div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold text-warning mb-1">AI Compatibility Insight</h6>
+                                <p class="mb-0 small">${aiAdvice}</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-warning border-0 rounded-circle" onclick="window.speak('${aiAdvice.replace(/'/g, "\\'")}')"><i class="ph ph-speaker-high" style="font-size: 1.2rem;"></i></button>
+                        `;
+                    }
+
+                    showToast(`Found ${schemes.length} matching schemes for you!`, 'success');
+                } else {
+                    showToast('No specific schemes found. Showing general benefits.', 'info');
                 }
-            }, 1500);
+            } catch (err) {
+                console.error("Scheme Fetch Error:", err);
+                showToast("Service momentarily unavailable. Fallback active.");
+            }
         };
+
+        // --- Health Tracker Module ---
+        let currentHealthMemberId = null;
+
+        window.updateDashFamilyCount = async function() {
+            const countEl = document.getElementById('dash-family-count');
+            if (!countEl) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/members`);
+                const result = await res.json();
+                if (result.success) {
+                    countEl.innerText = `${result.data.length} Members added`;
+                }
+            } catch (err) { console.error("Error updating dash family count", err); }
+        };
+
+        window.loadHealthDashboard = async function() {
+            const grid = document.getElementById('family-members-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-accent"></div><p class="mt-2 small opacity-50">Fetching family profiles...</p></div>';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/members`);
+                const result = await res.json();
+
+                if (result.success) {
+                    updateDashFamilyCount(); // Sync home screen count
+                    if (result.data && result.data.length > 0) {
+                        grid.innerHTML = result.data.map(member => `
+                            <div class="col-md-4 col-sm-6">
+                                <div class="glass-card p-4 h-100 member-card border border-white-10" onclick="viewMemberHealth('${member.id}')">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="bg-accent bg-opacity-10 text-accent p-3 rounded-circle" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="ph-bold ph-user fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-0 fw-bold">${member.name}</h5>
+                                            <span class="badge bg-white bg-opacity-10 text-white-50 small">${member.relation}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 small opacity-70">
+                                        <div class="col-6">Age: ${member.age}</div>
+                                        <div class="col-6">Blood: ${member.blood_group}</div>
+                                    </div>
+                                    <div class="mt-3 text-accent small fw-bold">
+                                        <i class="ph ph-calendar-check"></i> View Medical Timeline
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        grid.innerHTML = '<div class="col-12 text-center py-5 opacity-50"><i class="ph ph-users-four" style="font-size: 3rem;"></i><p class="mt-2">No family members found. Add your first member!</p></div>';
+                    }
+                } else {
+                    showToast(result.message || 'Failed to fetch members', 'danger');
+                }
+            } catch (err) {
+                console.error("[Health] Load Members Error:", err);
+                grid.innerHTML = '<div class="col-12 text-center py-5 text-danger"><i class="ph ph-warning-circle" style="font-size: 3rem;"></i><p class="mt-2">Failed to load family data. Please check your connection.</p></div>';
+            }
+        };
+
+        window.showAddFamilyMemberModal = function() {
+            const modal = new bootstrap.Modal(document.getElementById('addFamilyMemberModal'));
+            modal.show();
+        };
+
+        window.showAddHealthRecordModal = function() {
+            const modal = new bootstrap.Modal(document.getElementById('addHealthRecordModal'));
+            modal.show();
+        };
+
+        window.viewMemberHealth = async function(memberId) {
+            currentHealthMemberId = memberId;
+            navigate('health-detail'); // Switch view
+            
+            // Set member basic info in UI
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/members`);
+                const result = await res.json();
+                const member = result.data.find(m => m.id === memberId);
+                
+                if (member) {
+                    document.getElementById('selected-member-name').innerText = member.name;
+                    document.getElementById('selected-member-meta').innerText = `${member.relation} | ${member.age} Years | Blood: ${member.blood_group}`;
+                    document.getElementById('member-notes').innerText = member.notes || "No chronic conditions or allergies noted.";
+                }
+                
+                loadHealthRecords(memberId);
+            } catch (err) { console.error("Error loading member meta", err); }
+        };
+
+        window.loadHealthRecords = async function(memberId) {
+            const timeline = document.getElementById('health-timeline');
+            if (!timeline) return;
+
+            timeline.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-accent"></div></div>';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/records?member_id=${memberId}`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    timeline.innerHTML = result.data.map(record => `
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="mb-0 fw-bold text-accent">${record.diagnosis}</h6>
+                                <small class="opacity-50">${new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</small>
+                            </div>
+                            <div class="small opacity-80 mb-2">Doctor: ${record.doctor || 'General Physician'}</div>
+                            <div class="glass-card p-3 mb-2 small italic opacity-70" style="background: rgba(255,255,255,0.02);">
+                                ${record.notes || 'No specific notes recorded.'}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    timeline.innerHTML = '<div class="text-center py-4 opacity-40 italic">No medical history found. Click "New Record" to start tracking.</div>';
+                }
+            } catch (err) {
+                timeline.innerHTML = '<div class="text-center py-4 text-danger">Error loading medical history.</div>';
+            }
+        };
+
+        // Form Handlers
+        document.getElementById('addFamilyMemberForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating...';
+
+            const payload = {
+                name: document.getElementById('member-name').value,
+                age: document.getElementById('member-age').value,
+                relation: document.getElementById('member-relation').value,
+                gender: document.getElementById('member-gender').value,
+                blood_group: document.getElementById('member-blood').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Family member added to your profile!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addFamilyMemberModal')).hide();
+                    loadHealthDashboard();
+                } else {
+                    showToast(result.message, 'danger');
+                }
+            } catch (err) {
+                showToast('API communication error. Using offline fallback.', 'warning');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Create Member Profile';
+            }
+        });
+
+        document.getElementById('addHealthRecordForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentHealthMemberId) return;
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+            const payload = {
+                member_id: currentHealthMemberId,
+                diagnosis: document.getElementById('record-diagnosis').value,
+                date: document.getElementById('record-date').value,
+                doctor: document.getElementById('record-doctor').value,
+                notes: document.getElementById('record-notes').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/health/records`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Medical record updated successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addHealthRecordModal')).hide();
+                    loadHealthRecords(currentHealthMemberId);
+                } else {
+                    showToast(result.message, 'danger');
+                }
+            } catch (err) {
+                showToast('Failed to save record. Please check dashboard logs.', 'warning');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Save Medical Record';
+            }
+        });
+        // --- Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('AgriSmart SW registered', reg))
+                    .catch(err => console.log('AgriSmart SW failed', err));
+            });
+        }
