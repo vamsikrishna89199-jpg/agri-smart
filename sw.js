@@ -41,15 +41,27 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Basic network-first strategy for API calls, cache-first for static assets
-    if (event.request.url.includes('/api/')) {
+    // Only handle GET requests from the same origin
+    if (event.request.method !== 'GET') return;
+    
+    const url = new URL(event.request.url);
+    if (url.origin !== self.location.origin) return;
+
+    // Basic network-first strategy for local API calls, cache-first for static assets
+    if (url.pathname.includes('/api/')) {
         event.respondWith(
             fetch(event.request).catch(() => caches.match(event.request))
         );
     } else {
         event.respondWith(
             caches.match(event.request).then((response) => {
-                return response || fetch(event.request);
+                return response || fetch(event.request).catch(() => {
+                    // Fallback for failed navigation/asset fetch
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/index.html');
+                    }
+                    return null;
+                });
             })
         );
     }
