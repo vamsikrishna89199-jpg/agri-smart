@@ -41,6 +41,12 @@
         const holoViz = document.getElementById('ai-hologram-visualizer');
 
         if (btn) btn.classList.toggle('listening', active);
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.classList.toggle('listening', active);
+            micBtn.style.background = active ? 'var(--danger)' : 'var(--warning)';
+            micBtn.style.boxShadow = active ? '0 0 30px rgba(239, 68, 68, 0.6)' : '0 0 20px rgba(251, 191, 36, 0.4)';
+        }
         if (bar) bar.classList.toggle('active', active);
         
         if (active) {
