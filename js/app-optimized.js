@@ -4179,7 +4179,7 @@
                         item.onclick = () => selectChat(chat.id);
 
                         const isGroup = chat.type === 'group';
-                        const otherParticipant = (!isGroup && chat.participants) ? chat.participants.find(p => p.id.toString() !== currentUser.id.toString()) : null;
+                        const otherParticipant = (!isGroup && Array.isArray(chat.participants)) ? chat.participants.find(p => p && p.id && currentUser && p.id.toString() !== currentUser.id.toString()) : null;
                         const displayName = isGroup ? chat.name : (otherParticipant ? otherParticipant.username : "User");
                         const avatar = isGroup ? (chat.icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${chat.id}`) : (otherParticipant && otherParticipant.profile_pic ? otherParticipant.profile_pic : `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`);
 
@@ -4214,7 +4214,7 @@
             }
 
             const isGroup = chat.type === 'group';
-            const otherParticipant = !isGroup ? chat.participants.find(p => p.id.toString() !== currentUser.id.toString()) : null;
+            const otherParticipant = (!isGroup && Array.isArray(chat.participants)) ? chat.participants.find(p => p && p.id && currentUser && p.id.toString() !== currentUser.id.toString()) : null;
             const displayName = isGroup ? chat.name : (otherParticipant ? otherParticipant.username : "User");
             const avatar = isGroup ? (chat.icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${chat.id}`) : (otherParticipant && otherParticipant.profile_pic ? otherParticipant.profile_pic : `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`);
 

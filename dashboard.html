@@ -315,16 +315,16 @@
 
                         <!-- Main AI Command Bar -->
                         <div class="glass-card p-2"
-                            style="border-radius: 50px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);">
-                            <div class="input-group">
-                                <button class="btn btn-link text-accent ps-3 pe-2" onclick="toggleMasterVoice()">
+                            style="border-radius: 50px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(12px); cursor: pointer;">
+                            <div class="input-group align-items-center">
+                                <button class="btn btn-link text-accent ps-3 pe-2" onclick="toggleMasterVoice()" style="cursor: pointer; text-decoration: none;">
                                     <i class="ph-bold ph-microphone" style="font-size: 1.5rem;"></i>
                                 </button>
                                 <input type="text" id="ai-text-input"
-                                    class="form-control border-0 bg-transparent text-white py-3 fs-5"
+                                    class="form-control border-0 bg-transparent text-white py-2 fs-5"
                                     placeholder="Type a command or ask a question..." style="box-shadow: none;"
                                     onkeypress="if(event.key === 'Enter') { processVoiceCommand(this.value); this.value=''; }">
-                                <button class="btn btn-accent rounded-circle ms-2" style="width: 50px; height: 50px;"
+                                <button class="btn btn-accent rounded-circle ms-2 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px; cursor: pointer; flex-shrink: 0;"
                                     onclick="processVoiceCommand(document.getElementById('ai-text-input').value); document.getElementById('ai-text-input').value='';">
                                     <i class="ph-bold ph-paper-plane-right" style="font-size: 1.2rem;"></i>
                                 </button>
@@ -3235,19 +3235,21 @@
             </div>
 
             <div class="voice-actions mt-4 d-flex flex-column gap-3 align-items-center">
-                <div class="input-group"
-                    style="max-width: 320px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);">
-                    <button class="btn btn-link text-white ps-3 pe-2" onclick="toggleRecording()"
-                        title="Speak Command">
-                        <i class="ph ph-microphone" style="font-size: 1.1rem; color: var(--accent);"></i>
-                    </button>
-                    <input type="text" id="ai-text-input" class="form-control border-0 bg-transparent text-white"
-                        placeholder="Type or speak..." style="box-shadow: none;"
-                        onkeypress="if(event.key === 'Enter') { processVoiceCommand(this.value); this.value=''; }">
-                    <button class="btn btn-link text-accent pe-3"
-                        onclick="processVoiceCommand(document.getElementById('ai-text-input').value); document.getElementById('ai-text-input').value='';">
-                        <i class="ph ph-paper-plane-right" style="font-size: 1.1rem;"></i>
-                    </button>
+                <div class="glass-card p-2 w-100"
+                    style="max-width: 400px; border-radius: 50px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(12px); cursor: pointer;">
+                    <div class="input-group align-items-center">
+                        <button class="btn btn-link text-white ps-3 pe-2" onclick="toggleRecording()"
+                            title="Speak Command" style="cursor: pointer; text-decoration: none;">
+                            <i class="ph-bold ph-microphone" style="font-size: 1.5rem; color: var(--accent);"></i>
+                        </button>
+                        <input type="text" id="ai-text-input" class="form-control border-0 bg-transparent text-white py-2 fs-5"
+                            placeholder="Type or speak..." style="box-shadow: none;"
+                            onkeypress="if(event.key === 'Enter') { processVoiceCommand(this.value); this.value=''; }">
+                        <button class="btn btn-accent rounded-circle ms-2 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px; cursor: pointer; flex-shrink: 0;"
+                            onclick="processVoiceCommand(document.getElementById('ai-text-input').value); document.getElementById('ai-text-input').value='';">
+                            <i class="ph-bold ph-paper-plane-right" style="font-size: 1.2rem;"></i>
+                        </button>
+                    </div>
                 </div>
                 <button class="btn btn-primary px-4 py-2 rounded-pill" onclick="stopMasterVoice()">
                     <i class="ph ph-check-circle"></i> Stop & Process
